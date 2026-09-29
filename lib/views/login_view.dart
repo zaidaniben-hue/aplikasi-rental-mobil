@@ -98,25 +98,27 @@ class _LoginViewState extends State<LoginView> {
             child: ClipRRect(
               borderRadius: BorderRadius.circular(20),
               child: isWide
-                  ? Row(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        // Left Pane: Brand & Features Showcase
-                        Expanded(
-                          flex: 5,
-                          child: _buildBrandingPanel(),
-                        ),
-                        // Divider
-                        Container(width: 1, color: AppTheme.border),
-                        // Right Pane: Login Form
-                        Expanded(
-                          flex: 6,
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 36),
-                            child: _buildLoginForm(),
+                  ? IntrinsicHeight(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          // Left Pane: Brand & Features Showcase
+                          Expanded(
+                            flex: 5,
+                            child: _buildBrandingPanel(),
                           ),
-                        ),
-                      ],
+                          // Divider
+                          Container(width: 1, color: AppTheme.border),
+                          // Right Pane: Login Form
+                          Expanded(
+                            flex: 6,
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 36),
+                              child: _buildLoginForm(),
+                            ),
+                          ),
+                        ],
+                      ),
                     )
                   : Padding(
                       padding: const EdgeInsets.all(28),
@@ -152,7 +154,7 @@ class _LoginViewState extends State<LoginView> {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisSize: MainAxisSize.min,
         children: [
           // Logo & Name
           Column(
@@ -242,6 +244,7 @@ class _LoginViewState extends State<LoginView> {
               ),
             ],
           ),
+          const SizedBox(height: 28),
 
           // Bottom System Badge
           Container(
@@ -338,7 +341,7 @@ class _LoginViewState extends State<LoginView> {
       key: _formKey,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         children: [
           const Text(
             'Selamat Datang Kembali',
