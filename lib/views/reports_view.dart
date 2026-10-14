@@ -105,6 +105,38 @@ class _ReportsViewState extends State<ReportsView> {
                           Text('Sinkronisasi data multi-cabang kasir dan eksekusi Edge Functions', style: TextStyle(fontSize: 12, color: AppTheme.textMuted)),
                         ],
                       ),
+                      const Spacer(),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: SupabaseService().isConnected
+                              ? AppTheme.success.withValues(alpha: 0.15)
+                              : AppTheme.warning.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: SupabaseService().isConnected ? AppTheme.success : AppTheme.warning,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.circle,
+                              size: 8,
+                              color: SupabaseService().isConnected ? AppTheme.success : AppTheme.warning,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              SupabaseService().isConnected ? 'Terhubung' : 'Belum Terhubung',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: SupabaseService().isConnected ? AppTheme.success : AppTheme.warning,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
                   const Divider(height: 24),

@@ -10,24 +10,45 @@ class SupabaseService {
   bool _isInitialized = false;
   bool get isConnected => _isInitialized && _client != null;
 
+  static const String defaultUrl = 'https://gmvkixribojgsvnabisn.supabase.co';
+  static const String defaultAnonKey =
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdtdmtpeHJpYm9qZ3N2bmFiaXNuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE5NDI4NjQsImV4cCI6MjEwNzUxODg2NH0.p-jMWqtXiRApn2q59mopo6ngdKfhlA8bjRtGddfyAoc';
+
+  static String sanitizeUrl(String rawUrl) {
+    var url = rawUrl.trim();
+    while (url.endsWith('/')) {
+      url = url.substring(0, url.length - 1);
+    }
+    if (url.endsWith('/rest/v1')) {
+      url = url.substring(0, url.length - '/rest/v1'.length);
+    }
+    while (url.endsWith('/')) {
+      url = url.substring(0, url.length - 1);
+    }
+    return url;
+  }
+
   // Supabase Configuration
-  String? _supabaseUrl;
-  String? _supabaseAnonKey;
+  String? _supabaseUrl = defaultUrl;
+  String? _supabaseAnonKey = defaultAnonKey;
 
   String? get supabaseUrl => _supabaseUrl;
   String? get supabaseAnonKey => _supabaseAnonKey;
 
-  Future<void> initialize({required String url, required String anonKey}) async {
+  Future<void> initialize({String? url, String? anonKey}) async {
+    final targetUrl = sanitizeUrl(url ?? _supabaseUrl ?? defaultUrl);
+    final targetKey = (anonKey ?? _supabaseAnonKey ?? defaultAnonKey).trim();
+
     try {
       await Supabase.initialize(
-        url: url,
+        url: targetUrl,
         // ignore: deprecated_member_use
-        anonKey: anonKey,
+        anonKey: targetKey,
         debug: true,
       );
       _client = Supabase.instance.client;
-      _supabaseUrl = url;
-      _supabaseAnonKey = anonKey;
+      _supabaseUrl = targetUrl;
+      _supabaseAnonKey = targetKey;
       _isInitialized = true;
     } catch (e) {
       _isInitialized = false;

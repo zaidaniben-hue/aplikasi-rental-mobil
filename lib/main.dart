@@ -7,6 +7,7 @@ import 'theme/app_theme.dart';
 import 'views/login_view.dart';
 import 'views/dashboard_view.dart';
 import 'views/fleet_view.dart';
+import 'services/supabase_service.dart';
 import 'views/rental_view.dart';
 import 'views/maintenance_view.dart';
 import 'views/reports_view.dart';
@@ -14,6 +15,15 @@ import 'widgets/quick_action_dialogs.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Supabase backend automatically
+  try {
+    await SupabaseService().initialize();
+    debugPrint('Supabase initialized successfully!');
+  } catch (e) {
+    debugPrint('Supabase initialization failed/skipped: $e');
+  }
+
   runApp(
     ChangeNotifierProvider(
       create: (_) => AppState()..loadInitialData(),
