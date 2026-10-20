@@ -28,99 +28,200 @@ class _MaintenanceViewState extends State<MaintenanceView> {
       return state.getHealthForVehicle(v.id).overallHealth == _filterHealth;
     }).toList();
 
+    final isMobile = MediaQuery.of(context).size.width < 800;
+
+    final summaryCards = [
+      _summaryCard(
+        title: 'Jatuh Tempo (Merah)',
+        count: redVehicles.length.toString(),
+        desc: 'Batas terlewati • Auto-Lock sewa',
+        color: AppTheme.danger,
+        icon: Icons.cancel_rounded,
+        isSelected: _filterHealth == HealthLevel.merah,
+        isMobile: isMobile,
+        onTap: () {
+          setState(() {
+            _filterHealth = _filterHealth == HealthLevel.merah ? null : HealthLevel.merah;
+          });
+        },
+      ),
+      _summaryCard(
+        title: 'Siaga Servis (Kuning)',
+        count: yellowVehicles.length.toString(),
+        desc: 'Mendekati limit (<= 500 km / 7 hari)',
+        color: AppTheme.warning,
+        icon: Icons.warning_rounded,
+        isSelected: _filterHealth == HealthLevel.kuning,
+        isMobile: isMobile,
+        onTap: () {
+          setState(() {
+            _filterHealth = _filterHealth == HealthLevel.kuning ? null : HealthLevel.kuning;
+          });
+        },
+      ),
+      _summaryCard(
+        title: 'Kondisi Prima (Hijau)',
+        count: greenVehicles.length.toString(),
+        desc: 'Layak jalan & aman disewakan',
+        color: AppTheme.success,
+        icon: Icons.check_circle_rounded,
+        isSelected: _filterHealth == HealthLevel.hijau,
+        isMobile: isMobile,
+        onTap: () {
+          setState(() {
+            _filterHealth = _filterHealth == HealthLevel.hijau ? null : HealthLevel.hijau;
+          });
+        },
+      ),
+    ];
+
     return Scaffold(
       backgroundColor: AppTheme.background,
       body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+        padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 24, vertical: isMobile ? 16 : 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Header
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Monitoring & Perawatan Armada',
-                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: AppTheme.textPrimary, letterSpacing: -0.5),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'Pencegahan kerusakan, ambang batas odometer otomatis, dan pencatatan bengkel berkala',
-                      style: TextStyle(fontSize: 12, color: AppTheme.textMuted),
-                    ),
-                  ],
-                ),
-                ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.warning,
-                    foregroundColor: Colors.black,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    elevation: 0,
+            if (isMobile)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Monitoring & Perawatan Armada',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: AppTheme.textPrimary, letterSpacing: -0.5),
                   ),
-                  icon: const Icon(Icons.build_circle_rounded, size: 18),
-                  label: const Text('Catat Masuk Bengkel', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
-                  onPressed: () => _showLogbookEntryDialog(context, state),
-                ),
-              ],
-            ),
+                  const SizedBox(height: 2),
+                  Text(
+                    state.currentRole == UserRole.frontDesk
+                        ? 'Pengawasan ambang batas servis (Mode Kasir: Hanya-baca)'
+                        : 'Pencegahan kerusakan & jadwal servis bengkel armada',
+                    style: const TextStyle(fontSize: 12, color: AppTheme.textMuted),
+                  ),
+                  const SizedBox(height: 12),
+                  if (state.currentRole != UserRole.frontDesk)
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.warning,
+                          foregroundColor: Colors.black,
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          elevation: 0,
+                        ),
+                        icon: const Icon(Icons.build_circle_rounded, size: 18),
+                        label: const Text('Catat Masuk Bengkel', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+                        onPressed: () => _showLogbookEntryDialog(context, state),
+                      ),
+                    )
+                  else
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: AppTheme.surfaceInput,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: AppTheme.border),
+                      ),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.shield_outlined, size: 15, color: AppTheme.textMuted),
+                          SizedBox(width: 8),
+                          Text(
+                            'Mode Kasir: Penginputan servis hanya oleh Mekanik',
+                            style: TextStyle(fontSize: 11, color: AppTheme.textMuted, fontWeight: FontWeight.w600),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+              )
+            else
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Monitoring & Perawatan Armada',
+                        style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: AppTheme.textPrimary, letterSpacing: -0.5),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        state.currentRole == UserRole.frontDesk
+                            ? 'Pencegahan kerusakan dan status unit (Mode Kasir: Hanya-baca)'
+                            : 'Pencegahan kerusakan, ambang batas odometer otomatis, dan pencatatan bengkel berkala',
+                        style: const TextStyle(fontSize: 12, color: AppTheme.textMuted),
+                      ),
+                    ],
+                  ),
+                  if (state.currentRole != UserRole.frontDesk)
+                    ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.warning,
+                        foregroundColor: Colors.black,
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        elevation: 0,
+                      ),
+                      icon: const Icon(Icons.build_circle_rounded, size: 18),
+                      label: const Text('Catat Masuk Bengkel', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+                      onPressed: () => _showLogbookEntryDialog(context, state),
+                    )
+                  else
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: AppTheme.surfaceInput,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: AppTheme.border),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.shield_outlined, size: 15, color: AppTheme.textMuted),
+                          SizedBox(width: 8),
+                          Text(
+                            'Mode Kasir: Hanya-Baca',
+                            style: TextStyle(fontSize: 11, color: AppTheme.textMuted, fontWeight: FontWeight.w600),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
             const SizedBox(height: 16),
 
-            // Top KPI Summary Cards (Filterable with 1-click)
-            Row(
-              children: [
-                _summaryCard(
-                  title: 'Jatuh Tempo (Merah)',
-                  count: redVehicles.length.toString(),
-                  desc: 'Batas terlewati • Auto-Lock sewa',
-                  color: AppTheme.danger,
-                  icon: Icons.cancel_rounded,
-                  isSelected: _filterHealth == HealthLevel.merah,
-                  onTap: () {
-                    setState(() {
-                      _filterHealth = _filterHealth == HealthLevel.merah ? null : HealthLevel.merah;
-                    });
-                  },
-                ),
-                const SizedBox(width: 12),
-                _summaryCard(
-                  title: 'Siaga Servis (Kuning)',
-                  count: yellowVehicles.length.toString(),
-                  desc: 'Mendekati limit (<= 500 km / 7 hari)',
-                  color: AppTheme.warning,
-                  icon: Icons.warning_rounded,
-                  isSelected: _filterHealth == HealthLevel.kuning,
-                  onTap: () {
-                    setState(() {
-                      _filterHealth = _filterHealth == HealthLevel.kuning ? null : HealthLevel.kuning;
-                    });
-                  },
-                ),
-                const SizedBox(width: 12),
-                _summaryCard(
-                  title: 'Kondisi Prima (Hijau)',
-                  count: greenVehicles.length.toString(),
-                  desc: 'Layak jalan & aman disewakan',
-                  color: AppTheme.success,
-                  icon: Icons.check_circle_rounded,
-                  isSelected: _filterHealth == HealthLevel.hijau,
-                  onTap: () {
-                    setState(() {
-                      _filterHealth = _filterHealth == HealthLevel.hijau ? null : HealthLevel.hijau;
-                    });
-                  },
-                ),
-              ],
-            ),
+            // Top KPI Summary Cards
+            if (isMobile)
+              Column(
+                children: [
+                  summaryCards[0],
+                  const SizedBox(height: 8),
+                  summaryCards[1],
+                  const SizedBox(height: 8),
+                  summaryCards[2],
+                ],
+              )
+            else
+              Row(
+                children: [
+                  summaryCards[0],
+                  const SizedBox(width: 12),
+                  summaryCards[1],
+                  const SizedBox(width: 12),
+                  summaryCards[2],
+                ],
+              ),
             const SizedBox(height: 16),
 
             // Fleet Health Cards List
             Expanded(
               child: displayedVehicles.isEmpty
-                  ? Center(
+                  ? const Center(
                       child: Text(
                         'Tidak ada armada dengan filter ini.',
                         style: TextStyle(color: AppTheme.textMuted),
@@ -163,82 +264,161 @@ class _MaintenanceViewState extends State<MaintenanceView> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               // Card Header
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Row(
-                                    children: [
-                                      // Plate Badge
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                        decoration: BoxDecoration(
-                                          color: AppTheme.surfaceInput,
-                                          borderRadius: BorderRadius.circular(6),
-                                          border: Border.all(color: AppTheme.border),
-                                        ),
-                                        child: Text(
-                                          vehicle.plateNumber,
-                                          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, fontFamily: 'monospace', color: AppTheme.textPrimary),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 10),
-                                      Text(
-                                        '${vehicle.brand} ${vehicle.model} (${vehicle.yearMade})',
-                                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
-                                      ),
-                                      const SizedBox(width: 10),
-                                      // Health Badge
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                        decoration: BoxDecoration(
-                                          color: statusColor.withValues(alpha: 0.15),
-                                          borderRadius: BorderRadius.circular(6),
-                                          border: Border.all(color: statusColor.withValues(alpha: 0.3)),
-                                        ),
-                                        child: Row(
-                                          mainAxisSize: MainAxisSize.min,
+                              if (isMobile)
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Row(
                                           children: [
-                                            Icon(
-                                              health.overallHealth == HealthLevel.merah
-                                                  ? Icons.cancel_rounded
-                                                  : health.overallHealth == HealthLevel.kuning
-                                                      ? Icons.warning_rounded
-                                                      : Icons.check_circle_rounded,
-                                              size: 13,
-                                              color: statusColor,
+                                            // Plate Badge
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                              decoration: BoxDecoration(
+                                                color: AppTheme.surfaceInput,
+                                                borderRadius: BorderRadius.circular(6),
+                                                border: Border.all(color: AppTheme.border),
+                                              ),
+                                              child: Text(
+                                                vehicle.plateNumber,
+                                                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, fontFamily: 'monospace', color: AppTheme.textPrimary),
+                                              ),
                                             ),
-                                            const SizedBox(width: 5),
-                                            Text(
-                                              health.overallHealth.label,
-                                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: statusColor),
+                                            const SizedBox(width: 8),
+                                            // Health Badge
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                              decoration: BoxDecoration(
+                                                color: statusColor.withValues(alpha: 0.15),
+                                                borderRadius: BorderRadius.circular(6),
+                                                border: Border.all(color: statusColor.withValues(alpha: 0.3)),
+                                              ),
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Icon(
+                                                    health.overallHealth == HealthLevel.merah
+                                                        ? Icons.cancel_rounded
+                                                        : health.overallHealth == HealthLevel.kuning
+                                                            ? Icons.warning_rounded
+                                                            : Icons.check_circle_rounded,
+                                                    size: 13,
+                                                    color: statusColor,
+                                                  ),
+                                                  const SizedBox(width: 5),
+                                                  Text(
+                                                    health.overallHealth.label,
+                                                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: statusColor),
+                                                  ),
+                                                ],
+                                              ),
                                             ),
                                           ],
                                         ),
-                                      ),
-                                    ],
-                                  ),
-                                  Row(
-                                    children: [
-                                      Text(
-                                        'Odometer: ${NumberFormat('#,###').format(vehicle.odometerCurrent)} km',
-                                        style: const TextStyle(fontWeight: FontWeight.w700, fontFamily: 'monospace', fontSize: 12, color: AppTheme.textSecondary),
-                                      ),
-                                      const SizedBox(width: 10),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                        decoration: BoxDecoration(
-                                          color: Color(vehicle.status.colorValue).withValues(alpha: 0.15),
-                                          borderRadius: BorderRadius.circular(6),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                          decoration: BoxDecoration(
+                                            color: Color(vehicle.status.colorValue).withValues(alpha: 0.15),
+                                            borderRadius: BorderRadius.circular(6),
+                                          ),
+                                          child: Text(
+                                            vehicle.status.label,
+                                            style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(vehicle.status.colorValue)),
+                                          ),
                                         ),
-                                        child: Text(
-                                          vehicle.status.label,
-                                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(vehicle.status.colorValue)),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      '${vehicle.brand} ${vehicle.model} (${vehicle.yearMade})',
+                                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      'Odometer: ${NumberFormat('#,###').format(vehicle.odometerCurrent)} km',
+                                      style: const TextStyle(fontWeight: FontWeight.w700, fontFamily: 'monospace', fontSize: 12, color: AppTheme.textSecondary),
+                                    ),
+                                  ],
+                                )
+                              else
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        // Plate Badge
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                          decoration: BoxDecoration(
+                                            color: AppTheme.surfaceInput,
+                                            borderRadius: BorderRadius.circular(6),
+                                            border: Border.all(color: AppTheme.border),
+                                          ),
+                                          child: Text(
+                                            vehicle.plateNumber,
+                                            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, fontFamily: 'monospace', color: AppTheme.textPrimary),
+                                          ),
                                         ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
+                                        const SizedBox(width: 10),
+                                        Text(
+                                          '${vehicle.brand} ${vehicle.model} (${vehicle.yearMade})',
+                                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
+                                        ),
+                                        const SizedBox(width: 10),
+                                        // Health Badge
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                          decoration: BoxDecoration(
+                                            color: statusColor.withValues(alpha: 0.15),
+                                            borderRadius: BorderRadius.circular(6),
+                                            border: Border.all(color: statusColor.withValues(alpha: 0.3)),
+                                          ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Icon(
+                                                health.overallHealth == HealthLevel.merah
+                                                    ? Icons.cancel_rounded
+                                                    : health.overallHealth == HealthLevel.kuning
+                                                        ? Icons.warning_rounded
+                                                        : Icons.check_circle_rounded,
+                                                size: 13,
+                                                color: statusColor,
+                                              ),
+                                              const SizedBox(width: 5),
+                                              Text(
+                                                health.overallHealth.label,
+                                                style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: statusColor),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    Row(
+                                      children: [
+                                        Text(
+                                          'Odometer: ${NumberFormat('#,###').format(vehicle.odometerCurrent)} km',
+                                          style: const TextStyle(fontWeight: FontWeight.w700, fontFamily: 'monospace', fontSize: 12, color: AppTheme.textSecondary),
+                                        ),
+                                        const SizedBox(width: 10),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                          decoration: BoxDecoration(
+                                            color: Color(vehicle.status.colorValue).withValues(alpha: 0.15),
+                                            borderRadius: BorderRadius.circular(6),
+                                          ),
+                                          child: Text(
+                                            vehicle.status.label,
+                                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(vehicle.status.colorValue)),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
                               const Divider(height: 20),
 
                               // Maintenance Rules Grid
@@ -270,7 +450,7 @@ class _MaintenanceViewState extends State<MaintenanceView> {
                                             : AppTheme.border;
 
                                     return Container(
-                                      width: 270,
+                                      width: isMobile ? double.infinity : 270,
                                       padding: const EdgeInsets.all(10),
                                       decoration: BoxDecoration(
                                         color: isRed
@@ -326,17 +506,17 @@ class _MaintenanceViewState extends State<MaintenanceView> {
                                   }).toList(),
                                 ),
 
-                              // Quick Action: Complete service
+                              // Quick Action: Complete service (Mechanic & Manager only)
                               if (health.overallHealth == HealthLevel.merah || vehicle.status == VehicleStatus.perawatan) ...[
                                 const SizedBox(height: 12),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.end,
-                                  children: [
-                                    ElevatedButton.icon(
+                                if (state.currentRole != UserRole.frontDesk)
+                                  SizedBox(
+                                    width: isMobile ? double.infinity : null,
+                                    child: ElevatedButton.icon(
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: AppTheme.success,
                                         foregroundColor: Colors.white,
-                                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                                         visualDensity: VisualDensity.compact,
                                       ),
                                       icon: const Icon(Icons.check_circle_outline_rounded, size: 16),
@@ -357,8 +537,17 @@ class _MaintenanceViewState extends State<MaintenanceView> {
                                         );
                                       },
                                     ),
-                                  ],
-                                ),
+                                  )
+                                else
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                    decoration: BoxDecoration(
+                                      color: AppTheme.danger.withValues(alpha: 0.1),
+                                      borderRadius: BorderRadius.circular(6),
+                                      border: Border.all(color: AppTheme.danger.withValues(alpha: 0.3)),
+                                    ),
+                                    child: const Text('Unit terkunci oleh sistem. Menunggu penanganan mekanik armada.', style: TextStyle(fontSize: 11, color: AppTheme.danger, fontWeight: FontWeight.w600)),
+                                  ),
                               ],
                             ],
                           ),
@@ -380,54 +569,58 @@ class _MaintenanceViewState extends State<MaintenanceView> {
     required IconData icon,
     required bool isSelected,
     required VoidCallback onTap,
+    bool isMobile = false,
   }) {
-    return Expanded(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: isSelected ? color.withValues(alpha: 0.15) : AppTheme.surfaceCard,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: isSelected ? color : AppTheme.border,
-              width: isSelected ? 1.5 : 1,
+    final cardContent = InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: isSelected ? color.withValues(alpha: 0.15) : AppTheme.surfaceCard,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? color : AppTheme.border,
+            width: isSelected ? 1.5 : 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, size: 20, color: color),
             ),
-          ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(icon, size: 20, color: color),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(title, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: isSelected ? color : AppTheme.textPrimary)),
+                      Text(count, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: color)),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Text(desc, style: const TextStyle(fontSize: 11, color: AppTheme.textDim)),
+                ],
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(title, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: isSelected ? color : AppTheme.textPrimary)),
-                        Text(count, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: color)),
-                      ],
-                    ),
-                    const SizedBox(height: 2),
-                    Text(desc, style: const TextStyle(fontSize: 11, color: AppTheme.textDim)),
-                  ],
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
+
+    if (isMobile) {
+      return cardContent;
+    }
+    return Expanded(child: cardContent);
   }
 
   void _showLogbookEntryDialog(BuildContext context, AppState state) {
@@ -450,8 +643,9 @@ class _MaintenanceViewState extends State<MaintenanceView> {
               Text('Entri Catatan Servis Bengkel', style: TextStyle(color: AppTheme.textPrimary, fontSize: 16)),
             ],
           ),
-          content: SizedBox(
-            width: 480,
+          content: Container(
+            constraints: const BoxConstraints(maxWidth: 480),
+            width: double.infinity,
             child: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,

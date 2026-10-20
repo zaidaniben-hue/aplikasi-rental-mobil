@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
+import 'package:uuid/uuid.dart';
 import '../models/models.dart';
 import '../services/mock_data.dart';
+import '../services/supabase_service.dart';
 
 class AppState extends ChangeNotifier {
   // Authentication State
@@ -44,6 +46,7 @@ class AppState extends ChangeNotifier {
 
   void setRole(UserRole role) {
     _currentRole = role;
+    _currentTabIndex = 0;
     notifyListeners();
   }
 
@@ -55,6 +58,16 @@ class AppState extends ChangeNotifier {
     _currentTabIndex = index;
     notifyListeners();
   }
+
+  // Supabase Sync Status
+  bool _isSyncing = false;
+  bool get isSyncing => _isSyncing;
+
+  DateTime? _lastSyncTime;
+  DateTime? get lastSyncTime => _lastSyncTime;
+
+  String? _syncError;
+  String? get syncError => _syncError;
 
   // Data Collections
   List<Vehicle> _vehicles = [];
@@ -144,6 +157,7 @@ class AppState extends ChangeNotifier {
 
   // Initialize Data
   void loadInitialData() {
+    // 1. Instant local baseline render
     _vehicles = SeedData.getVehicles();
     _customers = SeedData.getCustomers();
     _maintenanceRules = SeedData.getMaintenanceRules();
@@ -154,7 +168,7 @@ class AppState extends ChangeNotifier {
       final activeRental = _rentals.first;
       _inspections.add(
         Inspection(
-          id: 'insp-001',
+          id: 'e0000000-0000-4000-a000-000000000001',
           rentalId: activeRental.id,
           vehicleId: activeRental.vehicleId,
           type: 'CHECK_OUT',
@@ -186,6 +200,82 @@ class AppState extends ChangeNotifier {
 
     evaluateAllMaintenance();
     notifyListeners();
+
+    // 2. Connect & sync live with Supabase in background
+    syncWithSupabase();
+  }
+
+  // Live Two-Way Sync with Supabase Database
+  Future<void> syncWithSupabase() async {
+    final supabase = SupabaseService();
+    if (!supabase.isConnected) return;
+
+    _isSyncing = true;
+    _syncError = null;
+    notifyListeners();
+
+    try {
+      // Auto-seed Supabase database if tables are currently empty
+      await supabase.seedDatabaseIfEmpty(
+        vehicles: _vehicles,
+        customers: _customers,
+        rules: _maintenanceRules,
+        rentals: _rentals,
+        inspections: _inspections,
+      );
+
+      // Fetch live data from Supabase tables
+      final remoteVehicles = await supabase.fetchVehicles();
+      final remoteCustomers = await supabase.fetchCustomers();
+      final remoteRules = await supabase.fetchMaintenanceRules();
+      final remoteRentals = await supabase.fetchRentals();
+      final remoteInspections = await supabase.fetchInspections();
+
+      if (remoteVehicles.isNotEmpty) {
+        _vehicles = remoteVehicles;
+      }
+      if (remoteCustomers.isNotEmpty) {
+        _customers = remoteCustomers;
+      }
+      if (remoteRules.isNotEmpty) {
+        _maintenanceRules = remoteRules;
+      }
+      if (remoteRentals.isNotEmpty) {
+        _rentals = remoteRentals;
+        // Relink vehicle and customer references if not joined
+        for (final r in _rentals) {
+          r.vehicle ??= _vehicles.where((v) => v.id == r.vehicleId).firstOrNull;
+          r.customer ??= _customers.where((c) => c.id == r.customerId).firstOrNull;
+        }
+      }
+      if (remoteInspections.isNotEmpty) {
+        _inspections.clear();
+        _inspections.addAll(remoteInspections);
+      }
+
+      // Re-evaluate selections & health
+      if (_vehicles.isNotEmpty) {
+        _selectedVehicle = _vehicles.firstWhere(
+          (v) => v.id == _selectedVehicle?.id,
+          orElse: () => _vehicles.first,
+        );
+      }
+      if (_rentals.isNotEmpty) {
+        _selectedRental = _rentals.firstWhere(
+          (r) => r.id == _selectedRental?.id,
+          orElse: () => _rentals.first,
+        );
+      }
+
+      evaluateAllMaintenance();
+      _lastSyncTime = DateTime.now();
+    } catch (e) {
+      _syncError = e.toString();
+      debugPrint('Supabase synchronization error: $e');
+    } finally {
+      _isSyncing = false;
+      notifyListeners();
+    }
   }
 
   // Anti Double-Booking Availability Checker
@@ -248,9 +338,10 @@ class AppState extends ChangeNotifier {
     final dateStr = startTime.toIso8601String().substring(0, 10).replaceAll('-', '');
     final suffix = (1000 + _rentals.length * 7).toString();
     final transactionCode = 'RNT-$dateStr-$suffix';
+    final newId = const Uuid().v4();
 
     final newRental = Rental(
-      id: 'r-${DateTime.now().millisecondsSinceEpoch}',
+      id: newId,
       transactionCode: transactionCode,
       vehicleId: vehicleId,
       customerId: customerId,
@@ -278,6 +369,13 @@ class AppState extends ChangeNotifier {
     }
 
     notifyListeners();
+
+    // Persist asynchronously to Supabase
+    SupabaseService().insertRental(newRental);
+    if (vehicle.status == VehicleStatus.booking) {
+      SupabaseService().updateVehicleStatus(vehicleId, VehicleStatus.booking);
+    }
+
     return null; // Success
   }
 
@@ -298,8 +396,9 @@ class AppState extends ChangeNotifier {
     final vehicle = _vehicles.firstWhere((v) => v.id == rental.vehicleId);
 
     // Record Inspection
+    final inspectionId = const Uuid().v4();
     final inspection = Inspection(
-      id: 'insp-${DateTime.now().millisecondsSinceEpoch}',
+      id: inspectionId,
       rentalId: rentalId,
       vehicleId: vehicle.id,
       type: 'CHECK_OUT',
@@ -317,11 +416,14 @@ class AppState extends ChangeNotifier {
 
     // Update Rental
     rental.rentalStatus = 'ACTIVE';
-    if (depositReceived != null && depositReceived > 0) {
-      // update deposit
-    }
 
     notifyListeners();
+
+    // Persist asynchronously to Supabase
+    SupabaseService().insertInspection(inspection);
+    SupabaseService().updateRental(rental);
+    SupabaseService().updateVehicleStatus(vehicle.id, VehicleStatus.disewa, odometer: odometerStart);
+
     return null; // Success
   }
 
@@ -393,8 +495,9 @@ class AppState extends ChangeNotifier {
     }
 
     // Save Return Inspection
+    final inspectionId = const Uuid().v4();
     final inspection = Inspection(
-      id: 'insp-${DateTime.now().millisecondsSinceEpoch}',
+      id: inspectionId,
       rentalId: rentalId,
       vehicleId: vehicle.id,
       type: 'CHECK_IN',
@@ -427,6 +530,11 @@ class AppState extends ChangeNotifier {
 
     evaluateAllMaintenance();
     notifyListeners();
+
+    // Persist asynchronously to Supabase
+    SupabaseService().insertInspection(inspection);
+    SupabaseService().updateRental(rental);
+    SupabaseService().updateVehicleStatus(vehicle.id, vehicle.status, odometer: odometerEnd);
 
     return {
       'success': true,
@@ -552,6 +660,24 @@ class AppState extends ChangeNotifier {
 
     evaluateAllMaintenance();
     notifyListeners();
+
+    // Persist asynchronously to Supabase
+    SupabaseService().updateVehicleStatus(vehicleId, VehicleStatus.tersedia, odometer: completedOdometer);
+    SupabaseService().updateMaintenanceRule(
+      vehicleId: vehicleId,
+      serviceType: serviceType,
+      lastServiceKm: completedOdometer,
+      lastServiceDate: DateTime.now(),
+    );
+    SupabaseService().logMaintenance(
+      id: const Uuid().v4(),
+      vehicleId: vehicleId,
+      ruleId: matchingRule?.id,
+      serviceType: serviceType,
+      workshopName: workshopName,
+      odometerAtService: completedOdometer,
+      totalCost: cost,
+    );
   }
 
   // Add new vehicle
@@ -559,11 +685,17 @@ class AppState extends ChangeNotifier {
     _vehicles.add(v);
     evaluateAllMaintenance();
     notifyListeners();
+
+    // Persist asynchronously to Supabase
+    SupabaseService().upsertVehicle(v);
   }
 
   // Add new customer
   void addCustomer(Customer c) {
     _customers.add(c);
     notifyListeners();
+
+    // Persist asynchronously to Supabase
+    SupabaseService().upsertCustomer(c);
   }
 }

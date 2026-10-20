@@ -266,6 +266,19 @@ class Inspection {
       createdAt: json['created_at'] != null ? DateTime.parse(json['created_at']) : DateTime.now(),
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'rental_id': rentalId,
+    'vehicle_id': vehicleId,
+    'type': type,
+    'odometer': odometer,
+    'fuel_level': fuelLevel,
+    'body_defects': bodyDefects.map((d) => d.toJson()).toList(),
+    'notes': notes,
+    'inspector_id': inspectorId,
+    'created_at': createdAt.toIso8601String(),
+  };
 }
 
 class Rental {
@@ -349,6 +362,31 @@ class Rental {
       customer: json['customer'] != null ? Customer.fromJson(Map<String, dynamic>.from(json['customer'])) : null,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'transaction_code': transactionCode,
+    'vehicle_id': vehicleId,
+    'customer_id': customerId,
+    'start_time': startTime.toIso8601String(),
+    'planned_end_time': plannedEndTime.toIso8601String(),
+    'actual_end_time': actualEndTime?.toIso8601String(),
+    'daily_rate': dailyRate,
+    'duration_days': durationDays,
+    'base_amount': baseAmount,
+    'overtime_hours': overtimeHours,
+    'overtime_fee': overtimeFee,
+    'fuel_fee': fuelFee,
+    'damage_fee': damageFee,
+    'total_amount': totalAmount,
+    'deposit_amount': depositAmount,
+    'down_payment': downPayment,
+    'refund_deposit': refundDeposit,
+    'payment_method': paymentMethod,
+    'payment_status': paymentStatus,
+    'rental_status': rentalStatus,
+    'notes': notes,
+  };
 }
 
 class MaintenanceRule {
@@ -383,6 +421,16 @@ class MaintenanceRule {
           : DateTime.now(),
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'vehicle_id': vehicleId,
+    'service_type': serviceType,
+    'interval_km': intervalKm,
+    'interval_days': intervalDays,
+    'last_service_km': lastServiceKm,
+    'last_service_date': lastServiceDate.toIso8601String().substring(0, 10),
+  };
 }
 
 class MaintenanceAlert {

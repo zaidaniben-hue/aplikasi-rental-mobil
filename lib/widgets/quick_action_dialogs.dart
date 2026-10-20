@@ -36,8 +36,9 @@ class QuickActionDialogs {
               side: const BorderSide(color: AppTheme.border),
             ),
             child: Container(
-              width: 580,
-              padding: const EdgeInsets.all(24),
+              constraints: const BoxConstraints(maxWidth: 580),
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
               child: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -46,25 +47,29 @@ class QuickActionDialogs {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: AppTheme.primary.withValues(alpha: 0.15),
-                                borderRadius: BorderRadius.circular(8),
+                        Expanded(
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.primary.withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Icon(Icons.add_shopping_cart_rounded, color: AppTheme.primary),
                               ),
-                              child: const Icon(Icons.add_shopping_cart_rounded, color: AppTheme.primary),
-                            ),
-                            const SizedBox(width: 12),
-                            const Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('Registrasi Sewa / Booking Baru', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
-                                Text('Pencatatan transaksi kasir cepat & akurat', style: TextStyle(fontSize: 12, color: AppTheme.textMuted)),
-                              ],
-                            ),
-                          ],
+                              const SizedBox(width: 12),
+                              const Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text('Registrasi Sewa / Booking Baru', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
+                                    Text('Pencatatan transaksi kasir cepat & akurat', style: TextStyle(fontSize: 11, color: AppTheme.textMuted)),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                         IconButton(
                           onPressed: () => Navigator.pop(ctx),
@@ -72,7 +77,7 @@ class QuickActionDialogs {
                         ),
                       ],
                     ),
-                    const Divider(height: 24),
+                    const Divider(height: 20),
 
                     // Customer Selection
                     const Text('Data Penyewa:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppTheme.textPrimary)),
@@ -405,8 +410,9 @@ class QuickActionDialogs {
             side: const BorderSide(color: AppTheme.border),
           ),
           child: Container(
-            width: 720,
-            padding: const EdgeInsets.all(24),
+            constraints: const BoxConstraints(maxWidth: 720),
+            width: double.infinity,
+            padding: const EdgeInsets.all(20),
             child: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -415,27 +421,31 @@ class QuickActionDialogs {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: AppTheme.accentPurple.withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(8),
+                      Expanded(
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: AppTheme.accentPurple.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Icon(Icons.key_rounded, color: AppTheme.accentPurple),
                             ),
-                            child: const Icon(Icons.key_rounded, color: AppTheme.accentPurple),
-                          ),
-                          const SizedBox(width: 12),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('Formulir Serah Terima Unit (Check-Out) - ${rental.transactionCode}',
-                                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
-                              Text('Armada: ${vehicle?.plateNumber} (${vehicle?.brand} ${vehicle?.model})',
-                                  style: const TextStyle(fontSize: 12, color: AppTheme.textMuted)),
-                            ],
-                          ),
-                        ],
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('Formulir Serah Terima Unit (Check-Out) - ${rental.transactionCode}',
+                                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
+                                  Text('Armada: ${vehicle?.plateNumber} (${vehicle?.brand} ${vehicle?.model})',
+                                      style: const TextStyle(fontSize: 11, color: AppTheme.textMuted)),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                       IconButton(onPressed: () => Navigator.pop(ctx), icon: const Icon(Icons.close_rounded, color: AppTheme.textMuted)),
                     ],
@@ -598,8 +608,9 @@ class QuickActionDialogs {
               side: const BorderSide(color: AppTheme.border),
             ),
             child: Container(
-              width: 760,
-              padding: const EdgeInsets.all(24),
+              constraints: const BoxConstraints(maxWidth: 760),
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
               child: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -608,27 +619,31 @@ class QuickActionDialogs {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: AppTheme.success.withValues(alpha: 0.15),
-                                borderRadius: BorderRadius.circular(8),
+                        Expanded(
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.success.withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Icon(Icons.assignment_turned_in_rounded, color: AppTheme.success),
                               ),
-                              child: const Icon(Icons.assignment_turned_in_rounded, color: AppTheme.success),
-                            ),
-                            const SizedBox(width: 12),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('Pengembalian & Kalkulasi Denda (Check-In) - ${rental.transactionCode}',
-                                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
-                                Text('Penyewa: ${rental.customer?.fullName} | Armada: ${vehicle?.plateNumber}',
-                                    style: const TextStyle(fontSize: 12, color: AppTheme.textMuted)),
-                              ],
-                            ),
-                          ],
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text('Pengembalian & Kalkulasi Denda (Check-In) - ${rental.transactionCode}',
+                                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
+                                    Text('Penyewa: ${rental.customer?.fullName} | Armada: ${vehicle?.plateNumber}',
+                                        style: const TextStyle(fontSize: 11, color: AppTheme.textMuted)),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                         IconButton(onPressed: () => Navigator.pop(ctx), icon: const Icon(Icons.close_rounded, color: AppTheme.textMuted)),
                       ],

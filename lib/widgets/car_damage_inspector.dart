@@ -197,16 +197,19 @@ class _CarDamageInspectorState extends State<CarDamageInspector> {
         ),
         const SizedBox(height: 10),
         // View Selector Buttons
-        Row(
-          children: [
-            _viewTabButton('front', 'Depan', Icons.directions_car_rounded),
-            const SizedBox(width: 8),
-            _viewTabButton('back', 'Belakang', Icons.shield_rounded),
-            const SizedBox(width: 8),
-            _viewTabButton('left', 'Samping Kiri', Icons.arrow_back_rounded),
-            const SizedBox(width: 8),
-            _viewTabButton('right', 'Samping Kanan', Icons.arrow_forward_rounded),
-          ],
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              _viewTabButton('front', 'Depan', Icons.directions_car_rounded),
+              const SizedBox(width: 8),
+              _viewTabButton('back', 'Belakang', Icons.shield_rounded),
+              const SizedBox(width: 8),
+              _viewTabButton('left', 'Samping Kiri', Icons.arrow_back_rounded),
+              const SizedBox(width: 8),
+              _viewTabButton('right', 'Samping Kanan', Icons.arrow_forward_rounded),
+            ],
+          ),
         ),
         const SizedBox(height: 12),
         // Interactive Canvas Container

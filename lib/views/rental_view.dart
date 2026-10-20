@@ -41,45 +41,79 @@ class _RentalViewState extends State<RentalView> {
     final countBooked = state.rentals.where((r) => r.rentalStatus == 'BOOKED').length;
     final countCompleted = state.rentals.where((r) => r.rentalStatus == 'COMPLETED').length;
 
+    final isMobile = MediaQuery.of(context).size.width < 800;
+
     return Scaffold(
       backgroundColor: AppTheme.background,
       body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+        padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 24, vertical: isMobile ? 16 : 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Top Bar
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Transaksi Sewa & Kasir',
-                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: AppTheme.textPrimary, letterSpacing: -0.5),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'Pencatatan serah terima (Check-in/Check-out), kalkulasi denda otomatis, dan cetak invoice struk',
-                      style: TextStyle(fontSize: 12, color: AppTheme.textMuted),
-                    ),
-                  ],
-                ),
-                ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primary,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    elevation: 0,
+            if (isMobile)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Transaksi Sewa & Kasir',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: AppTheme.textPrimary, letterSpacing: -0.5),
                   ),
-                  icon: const Icon(Icons.add_shopping_cart_rounded, size: 18),
-                  label: const Text('Sewa Baru (Ctrl+N)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
-                  onPressed: () => QuickActionDialogs.showNewBookingDialog(context, state),
-                ),
-              ],
-            ),
+                  const SizedBox(height: 2),
+                  const Text(
+                    'Pencatatan serah terima (Check-in/Check-out) & kasir',
+                    style: TextStyle(fontSize: 12, color: AppTheme.textMuted),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        elevation: 0,
+                      ),
+                      icon: const Icon(Icons.add_shopping_cart_rounded, size: 18),
+                      label: const Text('Sewa Baru', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+                      onPressed: () => QuickActionDialogs.showNewBookingDialog(context, state),
+                    ),
+                  ),
+                ],
+              )
+            else
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Transaksi Sewa & Kasir',
+                        style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: AppTheme.textPrimary, letterSpacing: -0.5),
+                      ),
+                      SizedBox(height: 2),
+                      Text(
+                        'Pencatatan serah terima (Check-in/Check-out), kalkulasi denda otomatis, dan cetak invoice struk',
+                        style: TextStyle(fontSize: 12, color: AppTheme.textMuted),
+                      ),
+                    ],
+                  ),
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primary,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      elevation: 0,
+                    ),
+                    icon: const Icon(Icons.add_shopping_cart_rounded, size: 18),
+                    label: const Text('Sewa Baru (Ctrl+N)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+                    onPressed: () => QuickActionDialogs.showNewBookingDialog(context, state),
+                  ),
+                ],
+              ),
             const SizedBox(height: 16),
 
             // Search Bar & Filter Strip
@@ -90,43 +124,81 @@ class _RentalViewState extends State<RentalView> {
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: AppTheme.border),
               ),
-              child: Row(
-                children: [
-                  // Search Input
-                  Expanded(
-                    flex: 3,
-                    child: TextField(
-                      onChanged: (val) => setState(() => _searchQuery = val),
-                      style: const TextStyle(color: AppTheme.textPrimary, fontSize: 13),
-                      decoration: InputDecoration(
-                        hintText: 'Cari kode booking, nama penyewa, atau plat nomor...',
-                        prefixIcon: const Icon(Icons.search_rounded, size: 18, color: AppTheme.textMuted),
-                        suffixIcon: _searchQuery.isNotEmpty
-                            ? IconButton(
-                                icon: const Icon(Icons.clear_rounded, size: 16, color: AppTheme.textMuted),
-                                onPressed: () => setState(() => _searchQuery = ''),
-                              )
-                            : null,
-                        border: InputBorder.none,
-                        enabledBorder: InputBorder.none,
-                        focusedBorder: InputBorder.none,
-                        isDense: true,
-                        contentPadding: const EdgeInsets.symmetric(vertical: 8),
-                      ),
+              child: isMobile
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        TextField(
+                          onChanged: (val) => setState(() => _searchQuery = val),
+                          style: const TextStyle(color: AppTheme.textPrimary, fontSize: 13),
+                          decoration: InputDecoration(
+                            hintText: 'Cari kode, penyewa, atau plat...',
+                            prefixIcon: const Icon(Icons.search_rounded, size: 18, color: AppTheme.textMuted),
+                            suffixIcon: _searchQuery.isNotEmpty
+                                ? IconButton(
+                                    icon: const Icon(Icons.clear_rounded, size: 16, color: AppTheme.textMuted),
+                                    onPressed: () => setState(() => _searchQuery = ''),
+                                  )
+                                : null,
+                            border: InputBorder.none,
+                            isDense: true,
+                            contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                          ),
+                        ),
+                        const Divider(height: 12),
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            children: [
+                              _statusTab('ALL', 'Semua (${state.rentals.length})', AppTheme.primary),
+                              const SizedBox(width: 8),
+                              _statusTab('ACTIVE', 'Disewa ($countActive)', AppTheme.accentPurple),
+                              const SizedBox(width: 8),
+                              _statusTab('BOOKED', 'Booking ($countBooked)', AppTheme.primary),
+                              const SizedBox(width: 8),
+                              _statusTab('COMPLETED', 'Selesai ($countCompleted)', AppTheme.success),
+                            ],
+                          ),
+                        ),
+                      ],
+                    )
+                  : Row(
+                      children: [
+                        // Search Input
+                        Expanded(
+                          flex: 3,
+                          child: TextField(
+                            onChanged: (val) => setState(() => _searchQuery = val),
+                            style: const TextStyle(color: AppTheme.textPrimary, fontSize: 13),
+                            decoration: InputDecoration(
+                              hintText: 'Cari kode booking, nama penyewa, atau plat nomor...',
+                              prefixIcon: const Icon(Icons.search_rounded, size: 18, color: AppTheme.textMuted),
+                              suffixIcon: _searchQuery.isNotEmpty
+                                  ? IconButton(
+                                      icon: const Icon(Icons.clear_rounded, size: 16, color: AppTheme.textMuted),
+                                      onPressed: () => setState(() => _searchQuery = ''),
+                                    )
+                                  : null,
+                              border: InputBorder.none,
+                              enabledBorder: InputBorder.none,
+                              focusedBorder: InputBorder.none,
+                              isDense: true,
+                              contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                            ),
+                          ),
+                        ),
+                        Container(width: 1, height: 28, color: AppTheme.border),
+                        const SizedBox(width: 12),
+                        // Filter Status Pills
+                        _statusTab('ALL', 'Semua (${state.rentals.length})', AppTheme.primary),
+                        const SizedBox(width: 8),
+                        _statusTab('ACTIVE', 'Sedang Disewa ($countActive)', AppTheme.accentPurple),
+                        const SizedBox(width: 8),
+                        _statusTab('BOOKED', 'Booking ($countBooked)', AppTheme.primary),
+                        const SizedBox(width: 8),
+                        _statusTab('COMPLETED', 'Selesai ($countCompleted)', AppTheme.success),
+                      ],
                     ),
-                  ),
-                  Container(width: 1, height: 28, color: AppTheme.border),
-                  const SizedBox(width: 12),
-                  // Filter Status Pills
-                  _statusTab('ALL', 'Semua (${state.rentals.length})', AppTheme.primary),
-                  const SizedBox(width: 8),
-                  _statusTab('ACTIVE', 'Sedang Disewa ($countActive)', AppTheme.accentPurple),
-                  const SizedBox(width: 8),
-                  _statusTab('BOOKED', 'Booking ($countBooked)', AppTheme.primary),
-                  const SizedBox(width: 8),
-                  _statusTab('COMPLETED', 'Selesai ($countCompleted)', AppTheme.success),
-                ],
-              ),
             ),
             const SizedBox(height: 16),
 
@@ -164,6 +236,152 @@ class _RentalViewState extends State<RentalView> {
                                 : isBooked
                                     ? AppTheme.primary
                                     : AppTheme.success;
+
+                            if (isMobile) {
+                              return Padding(
+                                padding: const EdgeInsets.all(14),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    // Row 1: Code + Badge + Print Button
+                                    Row(
+                                      children: [
+                                        Container(
+                                          width: 32,
+                                          height: 32,
+                                          decoration: BoxDecoration(
+                                            color: badgeColor.withValues(alpha: 0.15),
+                                            borderRadius: BorderRadius.circular(8),
+                                            border: Border.all(color: badgeColor.withValues(alpha: 0.3)),
+                                          ),
+                                          child: Icon(
+                                            isActive
+                                                ? Icons.car_rental_rounded
+                                                : isBooked
+                                                    ? Icons.bookmark_added_rounded
+                                                    : Icons.check_circle_outline_rounded,
+                                            color: badgeColor,
+                                            size: 16,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 10),
+                                        Text(
+                                          rental.transactionCode,
+                                          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, fontFamily: 'monospace', color: AppTheme.textPrimary),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: badgeColor.withValues(alpha: 0.15),
+                                            borderRadius: BorderRadius.circular(4),
+                                            border: Border.all(color: badgeColor.withValues(alpha: 0.3)),
+                                          ),
+                                          child: Text(
+                                            rental.rentalStatus,
+                                            style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: badgeColor),
+                                          ),
+                                        ),
+                                        const Spacer(),
+                                        IconButton(
+                                          icon: const Icon(Icons.print_outlined, size: 20, color: AppTheme.textMuted),
+                                          tooltip: 'Cetak Struk',
+                                          onPressed: () => showDialog(
+                                            context: context,
+                                            builder: (_) => ThermalReceiptDialog(rental: rental),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 10),
+                                    // Row 2: Vehicle & Customer
+                                    Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: AppTheme.surfaceInput,
+                                            borderRadius: BorderRadius.circular(4),
+                                            border: Border.all(color: AppTheme.border),
+                                          ),
+                                          child: Text(
+                                            rental.vehicle?.plateNumber ?? '-',
+                                            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 11, fontFamily: 'monospace', color: AppTheme.textPrimary),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            '${rental.vehicle?.brand ?? ''} ${rental.vehicle?.model ?? ''}',
+                                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.textPrimary),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Penyewa: ${rental.customer?.fullName ?? '-'} • ${rental.customer?.phoneNumber ?? ''}',
+                                      style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      '${dateFormat.format(rental.startTime)} s/d ${dateFormat.format(rental.plannedEndTime)}',
+                                      style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
+                                    ),
+                                    const Divider(height: 16),
+                                    // Row 3: Financial & Action Button
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              currency.format(rental.totalAmount),
+                                              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: AppTheme.success),
+                                            ),
+                                            Text(
+                                              '${rental.durationDays} Hari • Dep: ${currency.format(rental.depositAmount)}',
+                                              style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
+                                            ),
+                                            if (rental.overtimeFee > 0)
+                                              Text(
+                                                '+ Denda ${currency.format(rental.overtimeFee)}',
+                                                style: const TextStyle(fontSize: 10, color: AppTheme.warning, fontWeight: FontWeight.bold),
+                                              ),
+                                          ],
+                                        ),
+                                        if (rental.rentalStatus == 'BOOKED')
+                                          ElevatedButton.icon(
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: AppTheme.accentPurple,
+                                              foregroundColor: Colors.white,
+                                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                            ),
+                                            icon: const Icon(Icons.key_rounded, size: 14),
+                                            label: const Text('Check-Out', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                                            onPressed: () => QuickActionDialogs.showCheckoutDialog(context, state, rental),
+                                          )
+                                        else if (rental.rentalStatus == 'ACTIVE')
+                                          ElevatedButton.icon(
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: AppTheme.success,
+                                              foregroundColor: Colors.white,
+                                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                            ),
+                                            icon: const Icon(Icons.assignment_turned_in_rounded, size: 14),
+                                            label: const Text('Check-In', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                                            onPressed: () => QuickActionDialogs.showCheckinDialog(context, state, rental),
+                                          ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }
 
                             return Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),

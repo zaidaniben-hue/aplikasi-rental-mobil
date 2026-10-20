@@ -354,19 +354,19 @@ ALTER TABLE maintenance_rules ENABLE ROW LEVEL SECURITY;
 ALTER TABLE maintenance_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
 
--- Allow authenticated read/write based on application roles
-CREATE POLICY "Authenticated users can view vehicles" ON vehicles FOR SELECT TO authenticated USING (true);
-CREATE POLICY "Staff can update vehicles" ON vehicles FOR ALL TO authenticated USING (true);
+-- Allow authenticated and anon read/write based on application roles
+CREATE POLICY "Users can view vehicles" ON vehicles FOR SELECT TO anon, authenticated USING (true);
+CREATE POLICY "Users can update vehicles" ON vehicles FOR ALL TO anon, authenticated USING (true);
 
-CREATE POLICY "Authenticated users can view customers" ON customers FOR SELECT TO authenticated USING (true);
-CREATE POLICY "Staff can manage customers" ON customers FOR ALL TO authenticated USING (true);
+CREATE POLICY "Users can view customers" ON customers FOR SELECT TO anon, authenticated USING (true);
+CREATE POLICY "Users can manage customers" ON customers FOR ALL TO anon, authenticated USING (true);
 
-CREATE POLICY "Authenticated users can view rentals" ON rentals FOR SELECT TO authenticated USING (true);
-CREATE POLICY "Staff can manage rentals" ON rentals FOR ALL TO authenticated USING (true);
+CREATE POLICY "Users can view rentals" ON rentals FOR SELECT TO anon, authenticated USING (true);
+CREATE POLICY "Users can manage rentals" ON rentals FOR ALL TO anon, authenticated USING (true);
 
-CREATE POLICY "Authenticated users can view inspections" ON inspections FOR SELECT TO authenticated USING (true);
-CREATE POLICY "Staff can manage inspections" ON inspections FOR ALL TO authenticated USING (true);
+CREATE POLICY "Users can view inspections" ON inspections FOR SELECT TO anon, authenticated USING (true);
+CREATE POLICY "Users can manage inspections" ON inspections FOR ALL TO anon, authenticated USING (true);
 
-CREATE POLICY "Authenticated users can view maintenance" ON maintenance_rules FOR ALL TO authenticated USING (true);
-CREATE POLICY "Authenticated users can view maintenance logs" ON maintenance_logs FOR ALL TO authenticated USING (true);
-CREATE POLICY "Authenticated users can view audit logs" ON audit_logs FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Users can view maintenance" ON maintenance_rules FOR ALL TO anon, authenticated USING (true);
+CREATE POLICY "Users can view maintenance logs" ON maintenance_logs FOR ALL TO anon, authenticated USING (true);
+CREATE POLICY "Users can view audit logs" ON audit_logs FOR SELECT TO anon, authenticated USING (true);

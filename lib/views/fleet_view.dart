@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:uuid/uuid.dart';
 import '../models/models.dart';
 import '../providers/app_state.dart';
 import '../theme/app_theme.dart';
@@ -20,532 +21,850 @@ class FleetView extends StatelessWidget {
     final countBooking = state.vehicles.where((v) => v.status == VehicleStatus.booking).length;
     final countPerawatan = state.vehicles.where((v) => v.status == VehicleStatus.perawatan).length;
 
-    return Scaffold(
-      backgroundColor: AppTheme.background,
-      body: Row(
+    final isMobile = MediaQuery.of(context).size.width < 900;
+
+    final masterPane = Padding(
+      padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 24, vertical: isMobile ? 16 : 20),
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Left Pane: Filters & Data Grid (Master)
-          Expanded(
-            flex: 6,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Title & Action Header
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Katalog & Inventaris Armada',
-                            style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: AppTheme.textPrimary, letterSpacing: -0.5),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            '${state.filteredVehicles.length} dari ${state.vehicles.length} unit kendaraan siap beroperasi',
-                            style: const TextStyle(fontSize: 12, color: AppTheme.textMuted),
-                          ),
-                        ],
+          // Title & Action Header
+          if (isMobile)
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  state.currentRole == UserRole.mechanic
+                      ? 'Kondisi & Inventaris Armada'
+                      : 'Katalog & Inventaris Armada',
+                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: AppTheme.textPrimary, letterSpacing: -0.5),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  state.currentRole == UserRole.mechanic
+                      ? '${state.filteredVehicles.length} unit armada dalam monitoring teknis'
+                      : '${state.filteredVehicles.length} dari ${state.vehicles.length} unit kendaraan siap beroperasi',
+                  style: const TextStyle(fontSize: 12, color: AppTheme.textMuted),
+                ),
+                if (state.currentRole == UserRole.manager) ...[
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        elevation: 0,
                       ),
-                      ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.primary,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                          elevation: 0,
+                      icon: const Icon(Icons.add_rounded, size: 18),
+                      label: const Text('Tambah Unit Baru', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+                      onPressed: () => _showAddVehicleDialog(context, state),
+                    ),
+                  ),
+                ] else if (state.currentRole == UserRole.mechanic) ...[
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.warning,
+                        foregroundColor: Colors.black,
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        elevation: 0,
+                      ),
+                      icon: const Icon(Icons.build_circle_rounded, size: 18),
+                      label: const Text('Buka Antrean Bengkel', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+                      onPressed: () => state.setTabIndex(0),
+                    ),
+                  ),
+                ],
+              ],
+            )
+          else
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      state.currentRole == UserRole.mechanic
+                          ? 'Kondisi & Inventaris Armada'
+                          : 'Katalog & Inventaris Armada',
+                      style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: AppTheme.textPrimary, letterSpacing: -0.5),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      state.currentRole == UserRole.mechanic
+                          ? '${state.filteredVehicles.length} unit armada dalam monitoring teknis & odometer'
+                          : '${state.filteredVehicles.length} dari ${state.vehicles.length} unit kendaraan siap beroperasi',
+                      style: const TextStyle(fontSize: 12, color: AppTheme.textMuted),
+                    ),
+                  ],
+                ),
+                if (state.currentRole == UserRole.manager)
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primary,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      elevation: 0,
+                    ),
+                    icon: const Icon(Icons.add_rounded, size: 18),
+                    label: const Text('Tambah Unit Baru', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+                    onPressed: () => _showAddVehicleDialog(context, state),
+                  )
+                else if (state.currentRole == UserRole.mechanic)
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.warning,
+                      foregroundColor: Colors.black,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      elevation: 0,
+                    ),
+                    icon: const Icon(Icons.build_circle_rounded, size: 18),
+                    label: const Text('Buka Antrean Bengkel', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+                    onPressed: () => state.setTabIndex(0),
+                  ),
+              ],
+            ),
+          const SizedBox(height: 16),
+
+          // Search Bar
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: AppTheme.surfaceCard,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppTheme.border),
+            ),
+            child: Column(
+              children: [
+                if (isMobile) ...[
+                  TextField(
+                    onChanged: (q) => state.setVehicleSearch(q),
+                    style: const TextStyle(color: AppTheme.textPrimary, fontSize: 13),
+                    decoration: InputDecoration(
+                      hintText: 'Cari plat, merek, model...',
+                      prefixIcon: const Icon(Icons.search_rounded, size: 18, color: AppTheme.textMuted),
+                      suffixIcon: state.vehicleSearchQuery.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear_rounded, size: 16, color: AppTheme.textMuted),
+                              onPressed: () => state.setVehicleSearch(''),
+                            )
+                          : null,
+                      border: InputBorder.none,
+                      isDense: true,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                    ),
+                  ),
+                  const Divider(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String?>(
+                            value: state.transmissionFilter,
+                            dropdownColor: AppTheme.surfaceCard,
+                            style: const TextStyle(color: AppTheme.textPrimary, fontSize: 12),
+                            hint: const Text('Transmisi', style: TextStyle(color: AppTheme.textDim, fontSize: 12)),
+                            icon: const Icon(Icons.arrow_drop_down, color: AppTheme.textMuted, size: 18),
+                            isExpanded: true,
+                            items: const [
+                              DropdownMenuItem(value: null, child: Text('Semua Transmisi')),
+                              DropdownMenuItem(value: 'OTOMATIS', child: Text('Otomatis (AT)')),
+                              DropdownMenuItem(value: 'MANUAL', child: Text('Manual (MT)')),
+                            ],
+                            onChanged: (val) => state.setTransmissionFilter(val),
+                          ),
                         ),
-                        icon: const Icon(Icons.add_rounded, size: 18),
-                        label: const Text('Tambah Unit Baru', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
-                        onPressed: () => _showAddVehicleDialog(context, state),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String?>(
+                            value: state.categoryFilter,
+                            dropdownColor: AppTheme.surfaceCard,
+                            style: const TextStyle(color: AppTheme.textPrimary, fontSize: 12),
+                            hint: const Text('Kategori', style: TextStyle(color: AppTheme.textDim, fontSize: 12)),
+                            icon: const Icon(Icons.arrow_drop_down, color: AppTheme.textMuted, size: 18),
+                            isExpanded: true,
+                            items: const [
+                              DropdownMenuItem(value: null, child: Text('Semua Kategori')),
+                              DropdownMenuItem(value: 'CITY_CAR', child: Text('City Car')),
+                              DropdownMenuItem(value: 'MPV', child: Text('MPV')),
+                              DropdownMenuItem(value: 'SUV', child: Text('SUV')),
+                              DropdownMenuItem(value: 'MINIBUS', child: Text('Minibus')),
+                            ],
+                            onChanged: (val) => state.setCategoryFilter(val),
+                          ),
+                        ),
+                      ),
+                      if (state.transmissionFilter != null || state.categoryFilter != null || state.vehicleSearchQuery.isNotEmpty)
+                        IconButton(
+                          icon: const Icon(Icons.refresh_rounded, size: 18, color: AppTheme.textMuted),
+                          tooltip: 'Reset Filter',
+                          onPressed: () => state.clearFilters(),
+                        ),
+                    ],
+                  ),
+                ] else
+                  Row(
+                    children: [
+                      Expanded(
+                        flex: 4,
+                        child: TextField(
+                          onChanged: (q) => state.setVehicleSearch(q),
+                          style: const TextStyle(color: AppTheme.textPrimary, fontSize: 13),
+                          decoration: InputDecoration(
+                            hintText: 'Cari nomor plat, merek, atau model (Ctrl+F)...',
+                            prefixIcon: const Icon(Icons.search_rounded, size: 18, color: AppTheme.textMuted),
+                            suffixIcon: state.vehicleSearchQuery.isNotEmpty
+                                ? IconButton(
+                                    icon: const Icon(Icons.clear_rounded, size: 16, color: AppTheme.textMuted),
+                                    onPressed: () => state.setVehicleSearch(''),
+                                  )
+                                : null,
+                            border: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            isDense: true,
+                            contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                          ),
+                        ),
+                      ),
+                      Container(width: 1, height: 24, color: AppTheme.border),
+                      const SizedBox(width: 10),
+                      // Filter Transmisi
+                      Expanded(
+                        flex: 2,
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String?>(
+                            value: state.transmissionFilter,
+                            dropdownColor: AppTheme.surfaceCard,
+                            style: const TextStyle(color: AppTheme.textPrimary, fontSize: 12),
+                            hint: const Text('Semua Transmisi', style: TextStyle(color: AppTheme.textDim, fontSize: 12)),
+                            icon: const Icon(Icons.arrow_drop_down, color: AppTheme.textMuted, size: 18),
+                            isExpanded: true,
+                            items: const [
+                              DropdownMenuItem(value: null, child: Text('Semua Transmisi')),
+                              DropdownMenuItem(value: 'OTOMATIS', child: Text('Otomatis (AT)')),
+                              DropdownMenuItem(value: 'MANUAL', child: Text('Manual (MT)')),
+                            ],
+                            onChanged: (val) => state.setTransmissionFilter(val),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      // Filter Kategori
+                      Expanded(
+                        flex: 2,
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String?>(
+                            value: state.categoryFilter,
+                            dropdownColor: AppTheme.surfaceCard,
+                            style: const TextStyle(color: AppTheme.textPrimary, fontSize: 12),
+                            hint: const Text('Semua Tipe', style: TextStyle(color: AppTheme.textDim, fontSize: 12)),
+                            icon: const Icon(Icons.arrow_drop_down, color: AppTheme.textMuted, size: 18),
+                            isExpanded: true,
+                            items: const [
+                              DropdownMenuItem(value: null, child: Text('Semua Kategori')),
+                              DropdownMenuItem(value: 'CITY_CAR', child: Text('City Car')),
+                              DropdownMenuItem(value: 'MPV', child: Text('MPV')),
+                              DropdownMenuItem(value: 'SUV', child: Text('SUV')),
+                              DropdownMenuItem(value: 'MINIBUS', child: Text('Minibus')),
+                            ],
+                            onChanged: (val) => state.setCategoryFilter(val),
+                          ),
+                        ),
+                      ),
+                      if (state.transmissionFilter != null || state.categoryFilter != null || state.vehicleSearchQuery.isNotEmpty) ...[
+                        const SizedBox(width: 8),
+                        IconButton(
+                          icon: const Icon(Icons.refresh_rounded, size: 18, color: AppTheme.textMuted),
+                          tooltip: 'Reset Filter',
+                          onPressed: () => state.clearFilters(),
+                        ),
+                      ],
+                    ],
+                  ),
+                const SizedBox(height: 8),
+                // Quick Status Filter Pills
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      _filterPill(
+                        label: 'Semua Status',
+                        count: state.vehicles.length,
+                        isSelected: state.statusFilter == null,
+                        color: AppTheme.primary,
+                        onTap: () => state.setStatusFilter(null),
+                      ),
+                      const SizedBox(width: 8),
+                      _filterPill(
+                        label: 'Tersedia',
+                        count: countTersedia,
+                        isSelected: state.statusFilter == VehicleStatus.tersedia,
+                        color: AppTheme.success,
+                        onTap: () => state.setStatusFilter(VehicleStatus.tersedia),
+                      ),
+                      const SizedBox(width: 8),
+                      _filterPill(
+                        label: 'Sedang Disewa',
+                        count: countDisewa,
+                        isSelected: state.statusFilter == VehicleStatus.disewa,
+                        color: AppTheme.accentPurple,
+                        onTap: () => state.setStatusFilter(VehicleStatus.disewa),
+                      ),
+                      const SizedBox(width: 8),
+                      _filterPill(
+                        label: 'Booking',
+                        count: countBooking,
+                        isSelected: state.statusFilter == VehicleStatus.booking,
+                        color: AppTheme.primary,
+                        onTap: () => state.setStatusFilter(VehicleStatus.booking),
+                      ),
+                      const SizedBox(width: 8),
+                      _filterPill(
+                        label: 'Perawatan',
+                        count: countPerawatan,
+                        isSelected: state.statusFilter == VehicleStatus.perawatan,
+                        color: AppTheme.warning,
+                        onTap: () => state.setStatusFilter(VehicleStatus.perawatan),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
 
-                  // Search Bar
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: AppTheme.surfaceCard,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppTheme.border),
-                    ),
-                    child: Column(
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              flex: 4,
-                              child: TextField(
-                                onChanged: (q) => state.setVehicleSearch(q),
-                                style: const TextStyle(color: AppTheme.textPrimary, fontSize: 13),
-                                decoration: InputDecoration(
-                                  hintText: 'Cari nomor plat, merek, atau model (Ctrl+F)...',
-                                  prefixIcon: const Icon(Icons.search_rounded, size: 18, color: AppTheme.textMuted),
-                                  suffixIcon: state.vehicleSearchQuery.isNotEmpty
-                                      ? IconButton(
-                                          icon: const Icon(Icons.clear_rounded, size: 16, color: AppTheme.textMuted),
-                                          onPressed: () => state.setVehicleSearch(''),
-                                        )
-                                      : null,
-                                  border: InputBorder.none,
-                                  enabledBorder: InputBorder.none,
-                                  focusedBorder: InputBorder.none,
-                                  isDense: true,
-                                  contentPadding: const EdgeInsets.symmetric(vertical: 8),
-                                ),
-                              ),
-                            ),
-                            Container(width: 1, height: 24, color: AppTheme.border),
-                            const SizedBox(width: 10),
-                            // Filter Transmisi
-                            Expanded(
-                              flex: 2,
-                              child: DropdownButtonHideUnderline(
-                                child: DropdownButton<String?>(
-                                  value: state.transmissionFilter,
-                                  dropdownColor: AppTheme.surfaceCard,
-                                  style: const TextStyle(color: AppTheme.textPrimary, fontSize: 12),
-                                  hint: const Text('Semua Transmisi', style: TextStyle(color: AppTheme.textDim, fontSize: 12)),
-                                  icon: const Icon(Icons.arrow_drop_down, color: AppTheme.textMuted, size: 18),
-                                  isExpanded: true,
-                                  items: const [
-                                    DropdownMenuItem(value: null, child: Text('Semua Transmisi')),
-                                    DropdownMenuItem(value: 'OTOMATIS', child: Text('Otomatis (AT)')),
-                                    DropdownMenuItem(value: 'MANUAL', child: Text('Manual (MT)')),
-                                  ],
-                                  onChanged: (val) => state.setTransmissionFilter(val),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            // Filter Kategori
-                            Expanded(
-                              flex: 2,
-                              child: DropdownButtonHideUnderline(
-                                child: DropdownButton<String?>(
-                                  value: state.categoryFilter,
-                                  dropdownColor: AppTheme.surfaceCard,
-                                  style: const TextStyle(color: AppTheme.textPrimary, fontSize: 12),
-                                  hint: const Text('Semua Tipe', style: TextStyle(color: AppTheme.textDim, fontSize: 12)),
-                                  icon: const Icon(Icons.arrow_drop_down, color: AppTheme.textMuted, size: 18),
-                                  isExpanded: true,
-                                  items: const [
-                                    DropdownMenuItem(value: null, child: Text('Semua Kategori')),
-                                    DropdownMenuItem(value: 'CITY_CAR', child: Text('City Car')),
-                                    DropdownMenuItem(value: 'MPV', child: Text('MPV')),
-                                    DropdownMenuItem(value: 'SUV', child: Text('SUV')),
-                                    DropdownMenuItem(value: 'MINIBUS', child: Text('Minibus')),
-                                  ],
-                                  onChanged: (val) => state.setCategoryFilter(val),
-                                ),
-                              ),
-                            ),
-                            if (state.transmissionFilter != null || state.categoryFilter != null || state.vehicleSearchQuery.isNotEmpty) ...[
-                              const SizedBox(width: 8),
-                              IconButton(
-                                icon: const Icon(Icons.refresh_rounded, size: 18, color: AppTheme.textMuted),
-                                tooltip: 'Reset Filter',
-                                onPressed: () => state.clearFilters(),
-                              ),
-                            ],
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        // Quick Status Filter Pills (Simple and uncluttered!)
-                        SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: Row(
-                            children: [
-                              _filterPill(
-                                label: 'Semua Status',
-                                count: state.vehicles.length,
-                                isSelected: state.statusFilter == null,
-                                color: AppTheme.primary,
-                                onTap: () => state.setStatusFilter(null),
-                              ),
-                              const SizedBox(width: 8),
-                              _filterPill(
-                                label: 'Tersedia',
-                                count: countTersedia,
-                                isSelected: state.statusFilter == VehicleStatus.tersedia,
-                                color: AppTheme.success,
-                                onTap: () => state.setStatusFilter(VehicleStatus.tersedia),
-                              ),
-                              const SizedBox(width: 8),
-                              _filterPill(
-                                label: 'Sedang Disewa',
-                                count: countDisewa,
-                                isSelected: state.statusFilter == VehicleStatus.disewa,
-                                color: AppTheme.accentPurple,
-                                onTap: () => state.setStatusFilter(VehicleStatus.disewa),
-                              ),
-                              const SizedBox(width: 8),
-                              _filterPill(
-                                label: 'Booking',
-                                count: countBooking,
-                                isSelected: state.statusFilter == VehicleStatus.booking,
-                                color: AppTheme.primary,
-                                onTap: () => state.setStatusFilter(VehicleStatus.booking),
-                              ),
-                              const SizedBox(width: 8),
-                              _filterPill(
-                                label: 'Perawatan',
-                                count: countPerawatan,
-                                isSelected: state.statusFilter == VehicleStatus.perawatan,
-                                color: AppTheme.warning,
-                                onTap: () => state.setStatusFilter(VehicleStatus.perawatan),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 14),
+          // Data Grid Table
+          Expanded(
+            child: Container(
+              decoration: BoxDecoration(
+                color: AppTheme.surfaceCard,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppTheme.border),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: state.filteredVehicles.isEmpty
+                    ? const Center(
+                        child: Text('Tidak ada kendaraan yang cocok dengan kriteria pencarian.', style: TextStyle(color: AppTheme.textMuted)),
+                      )
+                    : ListView.separated(
+                        itemCount: state.filteredVehicles.length,
+                        separatorBuilder: (_, _) => const Divider(height: 1),
+                        itemBuilder: (context, idx) {
+                          final v = state.filteredVehicles[idx];
+                          final isSelected = selected?.id == v.id;
+                          final health = state.getHealthForVehicle(v.id);
 
-                  // Data Grid Table
-                  Expanded(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: AppTheme.surfaceCard,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppTheme.border),
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: state.filteredVehicles.isEmpty
-                            ? const Center(
-                                child: Text('Tidak ada kendaraan yang cocok dengan kriteria pencarian.', style: TextStyle(color: AppTheme.textMuted)),
-                              )
-                            : ListView.separated(
-                                itemCount: state.filteredVehicles.length,
-                                separatorBuilder: (_, _) => const Divider(height: 1),
-                                itemBuilder: (context, idx) {
-                                  final v = state.filteredVehicles[idx];
-                                  final isSelected = selected?.id == v.id;
-                                  final health = state.getHealthForVehicle(v.id);
-
-                                  return InkWell(
-                                    onTap: () => state.selectVehicle(v),
-                                    child: AnimatedContainer(
-                                      duration: const Duration(milliseconds: 120),
-                                      color: isSelected ? AppTheme.primary.withValues(alpha: 0.12) : Colors.transparent,
-                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                      child: Row(
-                                        children: [
-                                          // Automotive Plate Badge
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                            decoration: BoxDecoration(
-                                              color: AppTheme.surfaceInput,
-                                              borderRadius: BorderRadius.circular(6),
-                                              border: Border.all(
-                                                color: isSelected ? AppTheme.primary : AppTheme.border,
-                                                width: isSelected ? 1.5 : 1,
-                                              ),
-                                            ),
-                                            child: Row(
+                          return InkWell(
+                            onTap: () {
+                              state.selectVehicle(v);
+                              if (isMobile) {
+                                _showVehicleDetailModal(context, state, v, currency);
+                              }
+                            },
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 120),
+                              color: (!isMobile && isSelected) ? AppTheme.primary.withValues(alpha: 0.12) : Colors.transparent,
+                              padding: EdgeInsets.symmetric(horizontal: 16, vertical: isMobile ? 12 : 12),
+                              child: isMobile
+                                  ? Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Row(
                                               mainAxisSize: MainAxisSize.min,
                                               children: [
                                                 _healthDot(health.overallHealth),
                                                 const SizedBox(width: 6),
-                                                Text(
-                                                  v.plateNumber,
-                                                  style: const TextStyle(
-                                                    fontWeight: FontWeight.w700,
-                                                    fontSize: 12,
-                                                    fontFamily: 'monospace',
-                                                    color: AppTheme.textPrimary,
+                                                Container(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                                  decoration: BoxDecoration(
+                                                    color: AppTheme.surfaceInput,
+                                                    borderRadius: BorderRadius.circular(6),
+                                                    border: Border.all(color: AppTheme.border),
+                                                  ),
+                                                  child: Text(
+                                                    v.plateNumber,
+                                                    style: const TextStyle(
+                                                      fontWeight: FontWeight.w700,
+                                                      fontSize: 12,
+                                                      fontFamily: 'monospace',
+                                                      color: AppTheme.textPrimary,
+                                                    ),
                                                   ),
                                                 ),
                                               ],
                                             ),
-                                          ),
-                                          const SizedBox(width: 14),
-
-                                          // Brand & Model
-                                          Expanded(
-                                            flex: 3,
-                                            child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              children: [
-                                                Text(
-                                                  '${v.brand} ${v.model}',
-                                                  style: const TextStyle(
-                                                    fontWeight: FontWeight.w700,
-                                                    fontSize: 13,
-                                                    color: AppTheme.textPrimary,
-                                                  ),
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                              decoration: BoxDecoration(
+                                                color: Color(v.status.colorValue).withValues(alpha: 0.15),
+                                                borderRadius: BorderRadius.circular(6),
+                                                border: Border.all(color: Color(v.status.colorValue).withValues(alpha: 0.4)),
+                                              ),
+                                              child: Text(
+                                                v.status.label,
+                                                style: TextStyle(
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Color(v.status.colorValue),
                                                 ),
-                                                Text(
-                                                  '${v.category} • Tahun ${v.yearMade}',
-                                                  style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-
-                                          // Specs & Odo
-                                          Expanded(
-                                            flex: 2,
-                                            child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              children: [
-                                                Text(
-                                                  v.transmission == 'OTOMATIS' ? 'Automatic (AT)' : 'Manual (MT)',
-                                                  style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
-                                                ),
-                                                Text(
-                                                  '${NumberFormat('#,###').format(v.odometerCurrent)} km',
-                                                  style: const TextStyle(fontSize: 11, color: AppTheme.textDim, fontFamily: 'monospace'),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-
-                                          // Rate
-                                          Expanded(
-                                            flex: 2,
-                                            child: Text(
-                                              '${currency.format(v.dailyRate)}/hr',
-                                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppTheme.textPrimary),
-                                            ),
-                                          ),
-
-                                          // Status Badge
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                            decoration: BoxDecoration(
-                                              color: Color(v.status.colorValue).withValues(alpha: 0.15),
-                                              borderRadius: BorderRadius.circular(6),
-                                              border: Border.all(color: Color(v.status.colorValue).withValues(alpha: 0.4)),
-                                            ),
-                                            child: Text(
-                                              v.status.label,
-                                              style: TextStyle(
-                                                fontSize: 11,
-                                                fontWeight: FontWeight.bold,
-                                                color: Color(v.status.colorValue),
                                               ),
                                             ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          // Right Pane: Detail View (Detail)
-          Expanded(
-            flex: 4,
-            child: Container(
-              height: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-              decoration: const BoxDecoration(
-                color: AppTheme.surfaceCard,
-                border: Border(left: BorderSide(color: AppTheme.border)),
-              ),
-              child: selected == null
-                  ? const Center(
-                      child: Text('Pilih unit kendaraan untuk melihat detail spesifikasi.', style: TextStyle(color: AppTheme.textMuted)),
-                    )
-                  : SingleChildScrollView(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Header detail
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                        decoration: BoxDecoration(
-                                          color: AppTheme.surfaceInput,
-                                          borderRadius: BorderRadius.circular(6),
-                                          border: Border.all(color: AppTheme.primary),
+                                          ],
                                         ),
-                                        child: Text(
-                                          selected.plateNumber,
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          '${v.brand} ${v.model}',
                                           style: const TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w800,
-                                            fontFamily: 'monospace',
+                                            fontWeight: FontWeight.w700,
+                                            fontSize: 14,
                                             color: AppTheme.textPrimary,
                                           ),
                                         ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    '${selected.brand} ${selected.model}',
-                                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
-                                  ),
-                                ],
-                              ),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                                decoration: BoxDecoration(
-                                  color: Color(selected.status.colorValue).withValues(alpha: 0.15),
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(color: Color(selected.status.colorValue).withValues(alpha: 0.4)),
-                                ),
-                                child: Text(
-                                  selected.status.label,
-                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(selected.status.colorValue)),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const Divider(height: 24),
-
-                          // Health Radar Banner
-                          Builder(builder: (context) {
-                            final health = state.getHealthForVehicle(selected.id);
-                            Color bannerColor;
-                            String text;
-                            IconData icon;
-                            switch (health.overallHealth) {
-                              case HealthLevel.merah:
-                                bannerColor = AppTheme.danger;
-                                text = 'KONDISI: JATUH TEMPO SERVIS (Unit Dikunci)';
-                                icon = Icons.cancel_rounded;
-                                break;
-                              case HealthLevel.kuning:
-                                bannerColor = AppTheme.warning;
-                                text = 'KONDISI: SIAGA SERVIS (Mendekati Batas Odo/Waktu)';
-                                icon = Icons.warning_rounded;
-                                break;
-                              case HealthLevel.hijau:
-                                bannerColor = AppTheme.success;
-                                text = 'KONDISI: PRIMA & LAYAK OPERASI';
-                                icon = Icons.check_circle_rounded;
-                                break;
-                            }
-
-                            return Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: bannerColor.withValues(alpha: 0.12),
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: bannerColor.withValues(alpha: 0.35)),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Icon(icon, size: 16, color: bannerColor),
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        child: Text(
-                                          text,
-                                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: bannerColor),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          '${v.category} • ${v.transmission == 'OTOMATIS' ? 'AT' : 'MT'} • ${NumberFormat('#,###').format(v.odometerCurrent)} km',
+                                          style: const TextStyle(fontSize: 12, color: AppTheme.textMuted),
                                         ),
-                                      ),
-                                    ],
-                                  ),
-                                  if (health.alerts.isNotEmpty) ...[
-                                    const SizedBox(height: 6),
-                                    ...health.alerts.map((a) => Padding(
-                                          padding: const EdgeInsets.only(top: 2),
-                                          child: Text(
-                                            '• ${a.serviceType}: ${a.kmRemaining != null ? 'Sisa ${a.kmRemaining} km' : ''} ${a.daysRemaining != null ? 'Sisa ${a.daysRemaining} hari' : ''}',
-                                            style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary),
+                                        const SizedBox(height: 8),
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Text(
+                                              '${currency.format(v.dailyRate)}/hr',
+                                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: AppTheme.primary),
+                                            ),
+                                            const Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Text('Detail', style: TextStyle(fontSize: 11, color: AppTheme.textMuted, fontWeight: FontWeight.w600)),
+                                                Icon(Icons.chevron_right_rounded, size: 16, color: AppTheme.textMuted),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    )
+                                  : Row(
+                                      children: [
+                                        // Automotive Plate Badge
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                          decoration: BoxDecoration(
+                                            color: AppTheme.surfaceInput,
+                                            borderRadius: BorderRadius.circular(6),
+                                            border: Border.all(
+                                              color: isSelected ? AppTheme.primary : AppTheme.border,
+                                              width: isSelected ? 1.5 : 1,
+                                            ),
                                           ),
-                                        )),
-                                  ],
-                                ],
-                              ),
-                            );
-                          }),
-                          const SizedBox(height: 18),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              _healthDot(health.overallHealth),
+                                              const SizedBox(width: 6),
+                                              Text(
+                                                v.plateNumber,
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.w700,
+                                                  fontSize: 12,
+                                                  fontFamily: 'monospace',
+                                                  color: AppTheme.textPrimary,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        const SizedBox(width: 14),
 
-                          // Vehicle Specs Grid
-                          const Text('Spesifikasi Fisik & Dokumen', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: AppTheme.textPrimary)),
-                          const SizedBox(height: 10),
-                          _specTile('Tarif Sewa Harian', currency.format(selected.dailyRate), isHighlight: true),
-                          _specTile('Odometer Saat Ini', '${NumberFormat('#,###').format(selected.odometerCurrent)} km'),
-                          _specTile('Transmisi', selected.transmission == 'OTOMATIS' ? 'Otomatis (AT)' : 'Manual (MT)'),
-                          _specTile('Kategori Kendaraan', selected.category),
-                          _specTile('Jenis Bahan Bakar', selected.fuelType),
-                          _specTile('Nomor Rangka (VIN)', selected.vin),
-                          _specTile('Nomor Mesin', selected.engineNumber),
+                                        // Brand & Model
+                                        Expanded(
+                                          flex: 3,
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                '${v.brand} ${v.model}',
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.w700,
+                                                  fontSize: 13,
+                                                  color: AppTheme.textPrimary,
+                                                ),
+                                              ),
+                                              Text(
+                                                '${v.category} • Tahun ${v.yearMade}',
+                                                style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
 
-                          const Divider(height: 24),
+                                        // Specs & Odo
+                                        Expanded(
+                                          flex: 2,
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                v.transmission == 'OTOMATIS' ? 'Automatic (AT)' : 'Manual (MT)',
+                                                style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                                              ),
+                                              Text(
+                                                '${NumberFormat('#,###').format(v.odometerCurrent)} km',
+                                                style: const TextStyle(fontSize: 11, color: AppTheme.textDim, fontFamily: 'monospace'),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
 
-                          // Maintenance Rules
-                          const Text('Aturan Servis Terjadwal', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: AppTheme.textPrimary)),
-                          const SizedBox(height: 8),
-                          ...state.maintenanceRules.where((r) => r.vehicleId == selected.id).map((r) {
-                            return Container(
-                              margin: const EdgeInsets.only(bottom: 6),
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                              decoration: BoxDecoration(
-                                color: AppTheme.surfaceInput,
-                                borderRadius: BorderRadius.circular(6),
-                                border: Border.all(color: AppTheme.border),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(r.serviceType, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12, color: AppTheme.textPrimary)),
-                                  Text(
-                                    '${r.intervalKm != null ? 'Tiap ${r.intervalKm} km' : ''} ${r.intervalDays != null ? 'Tiap ${r.intervalDays} hari' : ''}',
-                                    style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
-                                  ),
-                                ],
-                              ),
-                            );
-                          }),
+                                        // Rate
+                                        Expanded(
+                                          flex: 2,
+                                          child: Text(
+                                            '${currency.format(v.dailyRate)}/hr',
+                                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppTheme.textPrimary),
+                                          ),
+                                        ),
 
-                          const SizedBox(height: 20),
-                          // Action Button
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton.icon(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: selected.status == VehicleStatus.tersedia ? AppTheme.primary : AppTheme.surfaceElevated,
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(vertical: 14),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                              ),
-                              icon: const Icon(Icons.shopping_cart_checkout_rounded, size: 18),
-                              label: Text(
-                                selected.status == VehicleStatus.tersedia ? 'Sewa Unit Ini' : 'Unit Sedang Tidak Tersedia (${selected.status.label})',
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                              ),
-                              onPressed: selected.status != VehicleStatus.tersedia
-                                  ? null
-                                  : () => QuickActionDialogs.showNewBookingDialog(context, state, preselectedVehicle: selected),
+                                        // Status Badge
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                          decoration: BoxDecoration(
+                                            color: Color(v.status.colorValue).withValues(alpha: 0.15),
+                                            borderRadius: BorderRadius.circular(6),
+                                            border: Border.all(color: Color(v.status.colorValue).withValues(alpha: 0.4)),
+                                          ),
+                                          child: Text(
+                                            v.status.label,
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.bold,
+                                              color: Color(v.status.colorValue),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                             ),
-                          ),
-                        ],
+                          );
+                        },
                       ),
-                    ),
+              ),
             ),
           ),
         ],
       ),
+    );
+
+    return Scaffold(
+      backgroundColor: AppTheme.background,
+      body: isMobile
+          ? masterPane
+          : Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(flex: 6, child: masterPane),
+                Expanded(
+                  flex: 4,
+                  child: Container(
+                    height: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                    decoration: const BoxDecoration(
+                      color: AppTheme.surfaceCard,
+                      border: Border(left: BorderSide(color: AppTheme.border)),
+                    ),
+                    child: selected == null
+                        ? const Center(
+                            child: Text('Pilih unit kendaraan untuk melihat detail spesifikasi.', style: TextStyle(color: AppTheme.textMuted)),
+                          )
+                        : SingleChildScrollView(
+                            child: _buildVehicleDetailContent(context, state, selected, currency),
+                          ),
+                  ),
+                ),
+              ],
+            ),
+    );
+  }
+
+  void _showVehicleDetailModal(BuildContext context, AppState state, Vehicle selected, NumberFormat currency) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppTheme.surfaceCard,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => DraggableScrollableSheet(
+        initialChildSize: 0.85,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        expand: false,
+        builder: (ctx, scrollController) => Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          child: SingleChildScrollView(
+            controller: scrollController,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(color: AppTheme.border, borderRadius: BorderRadius.circular(2)),
+                  ),
+                ),
+                _buildVehicleDetailContent(context, state, selected, currency, inBottomSheet: true),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  static Widget _buildVehicleDetailContent(
+    BuildContext context,
+    AppState state,
+    Vehicle selected,
+    NumberFormat currency, {
+    bool inBottomSheet = false,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Header detail
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppTheme.surfaceInput,
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: AppTheme.primary),
+                      ),
+                      child: Text(
+                        selected.plateNumber,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                          fontFamily: 'monospace',
+                          color: AppTheme.textPrimary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${selected.brand} ${selected.model}',
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
+                ),
+              ],
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: Color(selected.status.colorValue).withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Color(selected.status.colorValue).withValues(alpha: 0.4)),
+              ),
+              child: Text(
+                selected.status.label,
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(selected.status.colorValue)),
+              ),
+            ),
+          ],
+        ),
+        const Divider(height: 24),
+
+        // Health Radar Banner
+        Builder(builder: (context) {
+          final health = state.getHealthForVehicle(selected.id);
+          Color bannerColor;
+          String text;
+          IconData icon;
+          switch (health.overallHealth) {
+            case HealthLevel.merah:
+              bannerColor = AppTheme.danger;
+              text = 'KONDISI: JATUH TEMPO SERVIS (Unit Dikunci)';
+              icon = Icons.cancel_rounded;
+              break;
+            case HealthLevel.kuning:
+              bannerColor = AppTheme.warning;
+              text = 'KONDISI: SIAGA SERVIS (Mendekati Batas Odo/Waktu)';
+              icon = Icons.warning_rounded;
+              break;
+            case HealthLevel.hijau:
+              bannerColor = AppTheme.success;
+              text = 'KONDISI: PRIMA & LAYAK OPERASI';
+              icon = Icons.check_circle_rounded;
+              break;
+          }
+
+          return Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: bannerColor.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: bannerColor.withValues(alpha: 0.35)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(icon, size: 16, color: bannerColor),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        text,
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: bannerColor),
+                      ),
+                    ),
+                  ],
+                ),
+                if (health.alerts.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  ...health.alerts.map((a) => Padding(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: Text(
+                          '• ${a.serviceType}: ${a.kmRemaining != null ? 'Sisa ${a.kmRemaining} km' : ''} ${a.daysRemaining != null ? 'Sisa ${a.daysRemaining} hari' : ''}',
+                          style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary),
+                        ),
+                      )),
+                ],
+              ],
+            ),
+          );
+        }),
+        const SizedBox(height: 18),
+
+        // Vehicle Specs Grid
+        const Text('Spesifikasi Fisik & Dokumen', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: AppTheme.textPrimary)),
+        const SizedBox(height: 10),
+        _specTile('Tarif Sewa Harian', currency.format(selected.dailyRate), isHighlight: true),
+        _specTile('Odometer Saat Ini', '${NumberFormat('#,###').format(selected.odometerCurrent)} km'),
+        _specTile('Transmisi', selected.transmission == 'OTOMATIS' ? 'Otomatis (AT)' : 'Manual (MT)'),
+        _specTile('Kategori Kendaraan', selected.category),
+        _specTile('Jenis Bahan Bakar', selected.fuelType),
+        _specTile('Nomor Rangka (VIN)', selected.vin),
+        _specTile('Nomor Mesin', selected.engineNumber),
+
+        const Divider(height: 24),
+
+        // Maintenance Rules
+        const Text('Aturan Servis Terjadwal', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: AppTheme.textPrimary)),
+        const SizedBox(height: 8),
+        ...state.maintenanceRules.where((r) => r.vehicleId == selected.id).map((r) {
+          return Container(
+            margin: const EdgeInsets.only(bottom: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            decoration: BoxDecoration(
+              color: AppTheme.surfaceInput,
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: AppTheme.border),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(r.serviceType, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12, color: AppTheme.textPrimary)),
+                Text(
+                  '${r.intervalKm != null ? 'Tiap ${r.intervalKm} km' : ''} ${r.intervalDays != null ? 'Tiap ${r.intervalDays} hari' : ''}',
+                  style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
+                ),
+              ],
+            ),
+          );
+        }),
+
+        const SizedBox(height: 20),
+        // Action Button Tailored per Role
+        if (state.currentRole == UserRole.mechanic) ...[
+          if (selected.status == VehicleStatus.perawatan || state.getHealthForVehicle(selected.id).overallHealth != HealthLevel.hijau)
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.warning,
+                  foregroundColor: Colors.black,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                icon: const Icon(Icons.build_circle_rounded, size: 18),
+                label: const Text('Tindak Lanjuti di Jadwal Servis', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                onPressed: () {
+                  if (inBottomSheet) Navigator.pop(context);
+                  state.setTabIndex(0);
+                },
+              ),
+            )
+          else
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              decoration: BoxDecoration(
+                color: AppTheme.success.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppTheme.success.withValues(alpha: 0.3)),
+              ),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.check_circle_rounded, color: AppTheme.success, size: 18),
+                  SizedBox(width: 8),
+                  Text('Unit Prima • Siap Beroperasi', style: TextStyle(color: AppTheme.success, fontWeight: FontWeight.bold, fontSize: 12)),
+                ],
+              ),
+            ),
+        ] else ...[
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: selected.status == VehicleStatus.tersedia ? AppTheme.primary : AppTheme.surfaceElevated,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              icon: const Icon(Icons.shopping_cart_checkout_rounded, size: 18),
+              label: Text(
+                selected.status == VehicleStatus.tersedia ? 'Sewa Unit Ini' : 'Unit Sedang Tidak Tersedia (${selected.status.label})',
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+              ),
+              onPressed: selected.status != VehicleStatus.tersedia
+                  ? null
+                  : () {
+                      if (inBottomSheet) Navigator.pop(context);
+                      QuickActionDialogs.showNewBookingDialog(context, state, preselectedVehicle: selected);
+                    },
+            ),
+          ),
+        ],
+      ],
     );
   }
 
@@ -674,8 +993,9 @@ class FleetView extends StatelessWidget {
               Text('Tambah Unit Kendaraan Baru', style: TextStyle(color: AppTheme.textPrimary, fontSize: 16)),
             ],
           ),
-          content: SizedBox(
-            width: 480,
+          content: Container(
+            constraints: const BoxConstraints(maxWidth: 480),
+            width: double.infinity,
             child: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -742,7 +1062,7 @@ class FleetView extends StatelessWidget {
               onPressed: () {
                 if (plateController.text.trim().isEmpty) return;
                 state.addVehicle(Vehicle(
-                  id: 'v-${DateTime.now().millisecondsSinceEpoch}',
+                  id: const Uuid().v4(),
                   plateNumber: plateController.text.trim().toUpperCase(),
                   vin: vinController.text.trim(),
                   engineNumber: engineController.text.trim(),

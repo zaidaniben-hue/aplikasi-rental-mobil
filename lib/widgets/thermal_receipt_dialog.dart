@@ -31,16 +31,20 @@ class _ThermalReceiptDialogState extends State<ThermalReceiptDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = MediaQuery.of(context).size.width < 700;
+
     return Dialog(
       backgroundColor: AppTheme.surfaceCard,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
         side: const BorderSide(color: AppTheme.border),
       ),
+      insetPadding: EdgeInsets.symmetric(horizontal: isMobile ? 12 : 40, vertical: isMobile ? 16 : 24),
       child: Container(
-        width: 700,
-        height: 650,
-        padding: const EdgeInsets.all(24),
+        constraints: const BoxConstraints(maxWidth: 700, maxHeight: 750),
+        width: double.infinity,
+        height: isMobile ? MediaQuery.of(context).size.height * 0.85 : 650,
+        padding: EdgeInsets.all(isMobile ? 16 : 24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -48,15 +52,20 @@ class _ThermalReceiptDialogState extends State<ThermalReceiptDialog> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    const Icon(Icons.receipt_long_rounded, color: AppTheme.primary),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Cetak Bukti Transaksi: ${widget.rental.transactionCode}',
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
-                    ),
-                  ],
+                Expanded(
+                  child: Row(
+                    children: [
+                      const Icon(Icons.receipt_long_rounded, color: AppTheme.primary),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Cetak Struk: ${widget.rental.transactionCode}',
+                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
                 IconButton(
                   onPressed: () => Navigator.pop(context),
@@ -64,26 +73,29 @@ class _ThermalReceiptDialogState extends State<ThermalReceiptDialog> {
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
             // Format Selector Bar
-            Row(
-              children: [
-                const Text('Format Kertas Termal Kasir: ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                const SizedBox(width: 8),
-                ChoiceChip(
-                  label: const Text('80mm (Standard POS)'),
-                  selected: _is80mm,
-                  onSelected: (val) => setState(() => _is80mm = true),
-                ),
-                const SizedBox(width: 8),
-                ChoiceChip(
-                  label: const Text('58mm (Mini POS)'),
-                  selected: !_is80mm,
-                  onSelected: (val) => setState(() => _is80mm = false),
-                ),
-              ],
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  const Text('Ukuran: ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                  const SizedBox(width: 8),
+                  ChoiceChip(
+                    label: const Text('80mm (Standard POS)'),
+                    selected: _is80mm,
+                    onSelected: (val) => setState(() => _is80mm = true),
+                  ),
+                  const SizedBox(width: 8),
+                  ChoiceChip(
+                    label: const Text('58mm (Mini POS)'),
+                    selected: !_is80mm,
+                    onSelected: (val) => setState(() => _is80mm = false),
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
             // PDF Preview Area
             Expanded(
               child: ClipRRect(
