@@ -3,6 +3,7 @@ import 'package:uuid/uuid.dart';
 import '../models/models.dart';
 import '../services/mock_data.dart';
 import '../services/supabase_service.dart';
+import '../services/machine_learning/ml_service.dart';
 
 class AppState extends ChangeNotifier {
   // Authentication State
@@ -81,6 +82,15 @@ class AppState extends ChangeNotifier {
   List<Rental> get rentals => _rentals;
   List<Inspection> get inspections => _inspections;
   List<MaintenanceRule> get maintenanceRules => _maintenanceRules;
+
+  // Machine Learning Service
+  final MlService _mlService = MlService();
+  MlService get mlService => _mlService;
+
+  void reTrainMlModels() {
+    _mlService.initAndTrainAllModels(vehicles: _vehicles, rentals: _rentals);
+    notifyListeners();
+  }
 
   // Selected Items for Master-Detail Views
   Vehicle? _selectedVehicle;
@@ -199,6 +209,7 @@ class AppState extends ChangeNotifier {
     }
 
     evaluateAllMaintenance();
+    reTrainMlModels();
     notifyListeners();
 
     // 2. Connect & sync live with Supabase in background
@@ -268,6 +279,7 @@ class AppState extends ChangeNotifier {
       }
 
       evaluateAllMaintenance();
+      reTrainMlModels();
       _lastSyncTime = DateTime.now();
     } catch (e) {
       _syncError = e.toString();

@@ -65,17 +65,33 @@ class ReportsView extends StatelessWidget {
                   ),
                 ),
                 if (!isMobile)
-                  OutlinedButton.icon(
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppTheme.primary,
-                      side: const BorderSide(color: AppTheme.primary),
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                    ),
-                    icon: state.isSyncing
-                        ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primary))
-                        : const Icon(Icons.refresh_rounded, size: 16),
-                    label: const Text('Sinkronkan Supabase', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                    onPressed: state.isSyncing ? null : () => state.syncWithSupabase(),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: const Color(0xFF8B5CF6),
+                          side: const BorderSide(color: Color(0xFF8B5CF6)),
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        ),
+                        icon: const Icon(Icons.psychology_rounded, size: 16),
+                        label: const Text('AI & Analitik ML', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                        onPressed: () => state.setTabIndex(state.currentRole == UserRole.manager ? 5 : 4),
+                      ),
+                      const SizedBox(width: 8),
+                      OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppTheme.primary,
+                          side: const BorderSide(color: AppTheme.primary),
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        ),
+                        icon: state.isSyncing
+                            ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primary))
+                            : const Icon(Icons.refresh_rounded, size: 16),
+                        label: const Text('Sinkronkan Supabase', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                        onPressed: state.isSyncing ? null : () => state.syncWithSupabase(),
+                      ),
+                    ],
                   ),
               ],
             ),

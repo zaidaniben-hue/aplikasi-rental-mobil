@@ -40,6 +40,8 @@ dependencies:
   pdf: ^3.13.1
   printing: ^5.15.1
   uuid: ^4.6.0
+  ml_algo: ^16.18.1
+  ml_dataframe: ^1.6.0
 
 dev_dependencies:
   flutter_test:

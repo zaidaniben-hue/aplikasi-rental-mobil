@@ -12,6 +12,7 @@ import 'views/rental_view.dart';
 import 'views/maintenance_view.dart';
 import 'views/reports_view.dart';
 import 'views/inspection_log_view.dart';
+import 'views/ai_analytics_view.dart';
 import 'widgets/quick_action_dialogs.dart';
 
 void main() async {
@@ -327,6 +328,12 @@ class MainShell extends StatelessWidget {
             selectedIcon: Icons.dashboard_rounded,
             view: DashboardView(),
           ),
+          const NavItemConfig(
+            label: 'AI & Analitik ML',
+            icon: Icons.psychology_outlined,
+            selectedIcon: Icons.psychology_rounded,
+            view: AiAnalyticsView(),
+          ),
         ];
       case UserRole.frontDesk:
         return [
@@ -354,6 +361,12 @@ class MainShell extends StatelessWidget {
             selectedIcon: Icons.build_circle_rounded,
             badgeCount: warningCount,
             view: const MaintenanceView(),
+          ),
+          const NavItemConfig(
+            label: 'AI & Analitik ML',
+            icon: Icons.psychology_outlined,
+            selectedIcon: Icons.psychology_rounded,
+            view: AiAnalyticsView(),
           ),
         ];
       case UserRole.manager:
@@ -388,6 +401,12 @@ class MainShell extends StatelessWidget {
             icon: Icons.insights_outlined,
             selectedIcon: Icons.insights_rounded,
             view: ReportsView(),
+          ),
+          const NavItemConfig(
+            label: 'AI & Analitik ML',
+            icon: Icons.psychology_outlined,
+            selectedIcon: Icons.psychology_rounded,
+            view: AiAnalyticsView(),
           ),
         ];
     }

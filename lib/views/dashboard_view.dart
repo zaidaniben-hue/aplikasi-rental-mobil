@@ -168,6 +168,18 @@ class _DashboardViewState extends State<DashboardView> {
                       OutlinedButton.icon(
                         style: OutlinedButton.styleFrom(
                           backgroundColor: AppTheme.surfaceCard,
+                          foregroundColor: const Color(0xFF8B5CF6),
+                          side: const BorderSide(color: Color(0xFF8B5CF6)),
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                        icon: const Icon(Icons.psychology_rounded, size: 16),
+                        label: const Text('AI & Analitik ML', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                        onPressed: () => state.setTabIndex(state.currentRole == UserRole.manager ? 5 : 4),
+                      ),
+                      OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          backgroundColor: AppTheme.surfaceCard,
                           foregroundColor: AppTheme.textSecondary,
                           side: const BorderSide(color: AppTheme.border),
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
