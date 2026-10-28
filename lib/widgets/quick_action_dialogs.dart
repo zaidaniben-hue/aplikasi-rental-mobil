@@ -84,6 +84,7 @@ class QuickActionDialogs {
                     const SizedBox(height: 6),
                     DropdownButtonFormField<Customer>(
                       initialValue: selectedCustomer,
+                      isExpanded: true,
                       dropdownColor: AppTheme.surfaceCard,
                       decoration: const InputDecoration(
                         contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -93,15 +94,17 @@ class QuickActionDialogs {
                           value: c,
                           child: Row(
                             children: [
-                              Text(
-                                c.fullName,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: c.isBlacklisted ? AppTheme.danger : AppTheme.textPrimary,
+                              Expanded(
+                                child: Text(
+                                  '${c.fullName} (${c.phoneNumber})',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
+                                    color: c.isBlacklisted ? AppTheme.danger : AppTheme.textPrimary,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
-                              const SizedBox(width: 8),
-                              Text('(${c.phoneNumber})', style: const TextStyle(fontSize: 11, color: AppTheme.textMuted)),
                               if (c.isBlacklisted) ...[
                                 const SizedBox(width: 6),
                                 Container(
@@ -119,6 +122,38 @@ class QuickActionDialogs {
                       }).toList(),
                       onChanged: (val) => setDlgState(() => selectedCustomer = val),
                     ),
+
+                    if (selectedCustomer != null) ...[
+                      const SizedBox(height: 8),
+                      Builder(builder: (context) {
+                        final nb = state.getCustomerEligibility(selectedCustomer!);
+                        final isLayak = nb.bestClass == 'LAYAK SEWA (Aman)';
+                        final isTolak = nb.bestClass == 'TOLAK / BLACKLIST';
+                        final color = isLayak ? AppTheme.success : (isTolak ? AppTheme.danger : AppTheme.warning);
+                        final prob = ((nb.probabilities[nb.bestClass] ?? 0.8) * 100).toStringAsFixed(0);
+
+                        return Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: color.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: color.withValues(alpha: 0.3)),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(Icons.hub_rounded, size: 14, color: color),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'AI Screening (Naive Bayes): ${nb.bestClass} ($prob% keyakinan)',
+                                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: color),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }),
+                    ],
 
                     if (selectedCustomer?.isBlacklisted == true) ...[
                       const SizedBox(height: 8),
@@ -150,6 +185,7 @@ class QuickActionDialogs {
                     const SizedBox(height: 6),
                     DropdownButtonFormField<Vehicle>(
                       initialValue: selectedVehicle,
+                      isExpanded: true,
                       dropdownColor: AppTheme.surfaceCard,
                       decoration: const InputDecoration(
                         contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -166,9 +202,12 @@ class QuickActionDialogs {
                                 decoration: BoxDecoration(color: Color(v.status.colorValue), shape: BoxShape.circle),
                               ),
                               const SizedBox(width: 8),
-                              Text(
-                                '${v.plateNumber} - ${v.brand} ${v.model} (${currencyFormat.format(v.dailyRate)}/hari)',
-                                style: TextStyle(fontSize: 12, color: isAvailable ? AppTheme.textPrimary : AppTheme.textDim),
+                              Expanded(
+                                child: Text(
+                                  '${v.plateNumber} - ${v.brand} ${v.model} (${currencyFormat.format(v.dailyRate)}/hari)',
+                                  style: TextStyle(fontSize: 12, color: isAvailable ? AppTheme.textPrimary : AppTheme.textDim),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ),
                               const SizedBox(width: 6),
                               Text(
@@ -315,6 +354,67 @@ class QuickActionDialogs {
                         ],
                       ),
                     ),
+
+                    // AI Logistic Regression Overtime Risk Assessment
+                    Builder(builder: (context) {
+                      final hasPastLate = selectedCustomer != null
+                          ? state.rentals.any((r) => r.customerId == selectedCustomer!.id && (r.isOverdue || r.overtimeFee > 0))
+                          : false;
+                      final lateProb = state.mlService.predictRentalLateProbability(
+                        durationDays: durationDays.toDouble(),
+                        hasPastLate: hasPastLate,
+                        kmPerDay: 80,
+                        customerAge: 32,
+                      );
+                      final isHigh = lateProb > 0.55;
+                      final isMed = lateProb > 0.35 && !isHigh;
+                      final probColor = isHigh ? AppTheme.danger : (isMed ? AppTheme.warning : AppTheme.success);
+
+                      return Container(
+                        margin: const EdgeInsets.only(top: 10),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: probColor.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: probColor.withValues(alpha: 0.3)),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.alt_route_rounded, size: 16, color: probColor),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Wrap(
+                                    alignment: WrapAlignment.spaceBetween,
+                                    crossAxisAlignment: WrapCrossAlignment.center,
+                                    spacing: 6,
+                                    runSpacing: 2,
+                                    children: [
+                                      Text(
+                                        'Prediksi Risiko Telat (Logistic Regression):',
+                                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: probColor),
+                                      ),
+                                      Text(
+                                        '${(lateProb * 100).toStringAsFixed(0)}% Peluang',
+                                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: probColor),
+                                      ),
+                                    ],
+                                  ),
+                                  Text(
+                                    isHigh
+                                        ? 'Risiko tinggi keterlambatan. Dianjurkan meminta deposit ekstra atau mengingatkan penyewa.'
+                                        : 'Profil sewa aman dan berpeluang tinggi kembali tepat waktu.',
+                                    style: const TextStyle(fontSize: 10, color: AppTheme.textSecondary),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
 
                     const SizedBox(height: 20),
                     // Buttons

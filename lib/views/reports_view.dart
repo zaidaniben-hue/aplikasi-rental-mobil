@@ -74,9 +74,14 @@ class ReportsView extends StatelessWidget {
                           side: const BorderSide(color: Color(0xFF8B5CF6)),
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                         ),
-                        icon: const Icon(Icons.psychology_rounded, size: 16),
-                        label: const Text('AI & Analitik ML', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                        onPressed: () => state.setTabIndex(state.currentRole == UserRole.manager ? 5 : 4),
+                        icon: const Icon(Icons.auto_awesome, size: 16),
+                        label: const Text('Latih Ulang AI', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                        onPressed: () {
+                          state.reTrainMlModels();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('4 Model Machine Learning berhasil dilatih ulang!')),
+                          );
+                        },
                       ),
                       const SizedBox(width: 8),
                       OutlinedButton.icon(

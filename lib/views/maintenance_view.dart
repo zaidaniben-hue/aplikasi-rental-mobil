@@ -14,6 +14,7 @@ class MaintenanceView extends StatefulWidget {
 
 class _MaintenanceViewState extends State<MaintenanceView> {
   HealthLevel? _filterHealth; // null for all, or filter by level
+  final currency = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
 
   @override
   Widget build(BuildContext context) {
@@ -216,7 +217,11 @@ class _MaintenanceViewState extends State<MaintenanceView> {
                   summaryCards[2],
                 ],
               ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
+
+            // AI Linear Regression Maintenance Budget Banner
+            _buildAiLinearRegressionBanner(context, state, isMobile),
+            const SizedBox(height: 14),
 
             // Fleet Health Cards List
             Expanded(
@@ -420,6 +425,10 @@ class _MaintenanceViewState extends State<MaintenanceView> {
                                   ],
                                 ),
                               const Divider(height: 20),
+
+                              // AI Linear Regression Estimator Chip/Card for this vehicle
+                              _buildVehicleAiCostCard(context, state, vehicle),
+                              const SizedBox(height: 12),
 
                               // Maintenance Rules Grid
                               if (rules.isEmpty)
@@ -652,9 +661,18 @@ class _MaintenanceViewState extends State<MaintenanceView> {
                 children: [
                   DropdownButtonFormField<Vehicle>(
                     initialValue: selectedVehicle,
+                    isExpanded: true,
                     dropdownColor: AppTheme.surfaceCard,
                     decoration: const InputDecoration(labelText: 'Pilih Kendaraan'),
-                    items: state.vehicles.map((v) => DropdownMenuItem(value: v, child: Text('${v.plateNumber} - ${v.brand} ${v.model}'))).toList(),
+                    items: state.vehicles
+                        .map((v) => DropdownMenuItem(
+                              value: v,
+                              child: Text(
+                                '${v.plateNumber} - ${v.brand} ${v.model}',
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ))
+                        .toList(),
                     onChanged: (val) {
                       setDlgState(() {
                         selectedVehicle = val;
@@ -696,6 +714,419 @@ class _MaintenanceViewState extends State<MaintenanceView> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  // =========================================================================
+  // MACHINE LEARNING 1: LINEAR REGRESSION (Biaya Servis & Anggaran Perawatan)
+  // =========================================================================
+
+  Widget _buildAiLinearRegressionBanner(BuildContext context, AppState state, bool isMobile) {
+    double totalPredictedFleetCost = 0.0;
+    for (var v in state.vehicles) {
+      totalPredictedFleetCost += state.getPredictedMaintenanceCost(v);
+    }
+    final lin = state.mlService.linearRegression;
+    final r2Percent = (lin.r2Score * 100).toStringAsFixed(1);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFF1E3A8A).withValues(alpha: 0.35),
+            const Color(0xFF0F172A),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFF3B82F6).withValues(alpha: 0.3)),
+      ),
+      child: isMobile
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF3B82F6).withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(Icons.auto_awesome, color: Color(0xFF60A5FA), size: 16),
+                    ),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'AI Linear Regression Engine',
+                      style: TextStyle(color: Color(0xFF93C5FD), fontSize: 11, fontWeight: FontWeight.bold),
+                    ),
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: AppTheme.success.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text('R²: $r2Percent%', style: const TextStyle(color: AppTheme.success, fontSize: 10, fontWeight: FontWeight.bold)),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Estimasi Alokasi Dana Servis Armada: ${currency.format(totalPredictedFleetCost)}',
+                  style: const TextStyle(color: AppTheme.textPrimary, fontSize: 13, fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'Dihitung otomatis berbasis regresi OLS (Odometer + Usia Unit)',
+                  style: TextStyle(color: AppTheme.textMuted, fontSize: 11),
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFF93C5FD),
+                      side: const BorderSide(color: Color(0xFF3B82F6)),
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                    icon: const Icon(Icons.calculate_outlined, size: 14),
+                    label: const Text('Kalkulator Prediksi AI', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                    onPressed: () => _showLinearRegressionEstimatorDialog(context, state),
+                  ),
+                ),
+              ],
+            )
+          : Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF3B82F6).withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: const Color(0xFF3B82F6).withValues(alpha: 0.3)),
+                  ),
+                  child: const Icon(Icons.auto_awesome, color: Color(0xFF60A5FA), size: 22),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 4,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          const Text(
+                            'AI Predictive Cost Engine (Linear Regression)',
+                            style: TextStyle(color: Color(0xFF93C5FD), fontSize: 12, fontWeight: FontWeight.bold),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: AppTheme.success.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(color: AppTheme.success.withValues(alpha: 0.3)),
+                            ),
+                            child: Text('Model Fit R²: $r2Percent%', style: const TextStyle(color: AppTheme.success, fontSize: 10, fontWeight: FontWeight.bold)),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Total Proyeksi Anggaran Perawatan Seluruh Armada: ${currency.format(totalPredictedFleetCost)}',
+                        style: const TextStyle(color: AppTheme.textPrimary, fontSize: 14, fontWeight: FontWeight.w800),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+                      const Text(
+                        'Formula Regresi: Estimasi Biaya = (w₁ × Odometer KM) + (w₂ × Usia Mobil) + Bias OLS',
+                        style: TextStyle(color: AppTheme.textMuted, fontSize: 11, fontFamily: 'monospace'),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 10),
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF2563EB),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  icon: const Icon(Icons.calculate_outlined, size: 15),
+                  label: const Text('Kalkulator Prediksi AI', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  onPressed: () => _showLinearRegressionEstimatorDialog(context, state),
+                ),
+              ],
+            ),
+    );
+  }
+
+  Widget _buildVehicleAiCostCard(BuildContext context, AppState state, Vehicle vehicle) {
+    final predictedCost = state.getPredictedMaintenanceCost(vehicle);
+    final age = (DateTime.now().year - vehicle.yearMade).clamp(1, 25);
+    final lin = state.mlService.linearRegression;
+    final wKm = lin.weights.isNotEmpty ? lin.weights[0] : 35.0;
+    final wAge = lin.weights.length > 1 ? lin.weights[1] : 200000.0;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E293B).withValues(alpha: 0.6),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFF3B82F6).withValues(alpha: 0.25)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: const Color(0xFF3B82F6).withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: const Icon(Icons.auto_awesome, size: 14, color: Color(0xFF60A5FA)),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 2,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    const Text(
+                      'Prediksi Servis (Linear Regression):',
+                      style: TextStyle(fontSize: 11, color: Color(0xFF93C5FD), fontWeight: FontWeight.w600),
+                    ),
+                    Text(
+                      currency.format(predictedCost),
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AppTheme.textPrimary),
+                    ),
+                  ],
+                ),
+                Text(
+                  'Bobot Fitur: (${NumberFormat('#,###').format(vehicle.odometerCurrent)} km × ${wKm.toStringAsFixed(1)}) + ($age thn × ${currency.format(wAge)})',
+                  style: const TextStyle(fontSize: 10, color: AppTheme.textDim, fontFamily: 'monospace'),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 6),
+          InkWell(
+            onTap: () => _showLinearRegressionEstimatorDialog(context, state, preselectedVehicle: vehicle),
+            borderRadius: BorderRadius.circular(6),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: const [
+                  Text('Simulasi', style: TextStyle(fontSize: 11, color: Color(0xFF60A5FA), fontWeight: FontWeight.bold)),
+                  Icon(Icons.chevron_right_rounded, size: 14, color: Color(0xFF60A5FA)),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showLinearRegressionEstimatorDialog(BuildContext context, AppState state, {Vehicle? preselectedVehicle}) {
+    Vehicle? selected = preselectedVehicle ?? (state.vehicles.isNotEmpty ? state.vehicles.first : null);
+    double simKm = selected?.odometerCurrent.toDouble() ?? 45000.0;
+    double simAge = selected != null ? (DateTime.now().year - selected.yearMade).toDouble().clamp(1.0, 20.0) : 3.0;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setDlgState) {
+          final lin = state.mlService.linearRegression;
+          final estimatedCost = state.mlService.predictMaintenanceCost(odometerKm: simKm, vehicleAgeYears: simAge);
+          final r2 = (lin.r2Score * 100).toStringAsFixed(1);
+
+          return Dialog(
+            backgroundColor: AppTheme.surfaceCard,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: const BorderSide(color: AppTheme.border)),
+            child: Container(
+              constraints: const BoxConstraints(maxWidth: 520),
+              padding: const EdgeInsets.all(20),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF3B82F6).withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Icon(Icons.show_chart_rounded, color: Color(0xFF60A5FA), size: 20),
+                            ),
+                            const SizedBox(width: 10),
+                            const Text(
+                              'Linear Regression Estimator',
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
+                            ),
+                          ],
+                        ),
+                        IconButton(onPressed: () => Navigator.pop(ctx), icon: const Icon(Icons.close_rounded, color: AppTheme.textMuted)),
+                      ],
+                    ),
+                    const Divider(height: 20),
+
+                    // Model Formula Box
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppTheme.surfaceInput,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: AppTheme.border),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text('Formula Regresi Linier OLS:', style: TextStyle(fontSize: 11, color: AppTheme.textMuted)),
+                              Text('Akurasi R²: $r2%', style: const TextStyle(fontSize: 11, color: AppTheme.success, fontWeight: FontWeight.bold)),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            lin.getFormulaString(),
+                            style: const TextStyle(fontSize: 11, fontFamily: 'monospace', color: Color(0xFF93C5FD), fontWeight: FontWeight.w600),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Vehicle Quick Select
+                    const Text('Pilih Unit Armada (Opsional):', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
+                    const SizedBox(height: 6),
+                    DropdownButtonFormField<Vehicle>(
+                      initialValue: selected,
+                      isExpanded: true,
+                      dropdownColor: AppTheme.surfaceCard,
+                      decoration: const InputDecoration(contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10)),
+                      items: state.vehicles.map((v) {
+                        return DropdownMenuItem(
+                          value: v,
+                          child: Text(
+                            '${v.plateNumber} - ${v.brand} ${v.model} (${v.odometerCurrent} km)',
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (val) {
+                        if (val != null) {
+                          setDlgState(() {
+                            selected = val;
+                            simKm = val.odometerCurrent.toDouble();
+                            simAge = (DateTime.now().year - val.yearMade).toDouble().clamp(1.0, 20.0);
+                          });
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Sliders
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('Simulasi Jarak Tempuh (KM):', style: TextStyle(fontSize: 12, color: AppTheme.textSecondary)),
+                        Text('${NumberFormat('#,###').format(simKm.toInt())} km', style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.textPrimary, fontFamily: 'monospace')),
+                      ],
+                    ),
+                    Slider(
+                      value: simKm,
+                      min: 0,
+                      max: 200000,
+                      divisions: 200,
+                      activeColor: const Color(0xFF3B82F6),
+                      onChanged: (val) => setDlgState(() => simKm = val),
+                    ),
+
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('Usia Kendaraan (Tahun):', style: TextStyle(fontSize: 12, color: AppTheme.textSecondary)),
+                        Text('${simAge.toStringAsFixed(1)} Tahun', style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
+                      ],
+                    ),
+                    Slider(
+                      value: simAge,
+                      min: 1,
+                      max: 15,
+                      divisions: 28,
+                      activeColor: const Color(0xFF3B82F6),
+                      onChanged: (val) => setDlgState(() => simAge = val),
+                    ),
+                    const SizedBox(height: 14),
+
+                    // Result Box
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [const Color(0xFF1E3A8A).withValues(alpha: 0.3), const Color(0xFF0F172A)],
+                        ),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: const Color(0xFF3B82F6).withValues(alpha: 0.4)),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: const [
+                              Text('Hasil Proyeksi Biaya Servis:', style: TextStyle(fontSize: 11, color: Color(0xFF93C5FD))),
+                              SizedBox(height: 2),
+                              Text('Rekomendasi Plafon Anggaran', style: TextStyle(fontSize: 10, color: AppTheme.textMuted)),
+                            ],
+                          ),
+                          Text(
+                            currency.format(estimatedCost),
+                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF60A5FA)),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2563EB), foregroundColor: Colors.white),
+                        onPressed: () => Navigator.pop(ctx),
+                        child: const Text('Tutup Kalkulator'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }

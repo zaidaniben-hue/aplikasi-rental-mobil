@@ -92,6 +92,85 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  // --- ML Integration Helper Methods ---
+  
+  /// 1. Linear Regression: Prediksi Biaya Servis Kendaraan Berdasarkan Odometer & Usia
+  double getPredictedMaintenanceCost(Vehicle vehicle) {
+    final age = (DateTime.now().year - vehicle.yearMade).toDouble().clamp(1.0, 25.0);
+    return _mlService.predictMaintenanceCost(
+      odometerKm: vehicle.odometerCurrent.toDouble(),
+      vehicleAgeYears: age,
+    );
+  }
+
+  /// 2. Logistic Regression: Prediksi Risiko Keterlambatan Pengembalian
+  double getPredictedRentalLateProbability(Rental rental) {
+    final custId = rental.customerId;
+    final pastRentals = _rentals.where((r) => r.customerId == custId && r.id != rental.id);
+    final hasPastLate = pastRentals.any((r) => r.isOverdue || r.overtimeFee > 0);
+    return _mlService.predictRentalLateProbability(
+      durationDays: rental.durationDays.toDouble(),
+      hasPastLate: hasPastLate,
+      kmPerDay: 75.0,
+      customerAge: 30.0,
+    );
+  }
+
+  /// 3. Naive Bayes: Evaluasi Kelayakan & Screening Pelanggan
+  NaiveBayesPrediction getCustomerEligibility(Customer customer) {
+    if (customer.isBlacklisted) {
+      return NaiveBayesPrediction(
+        bestClass: 'TOLAK / BLACKLIST',
+        probabilities: {'TOLAK / BLACKLIST': 0.98, 'VERIFIKASI KETAT': 0.02, 'LAYAK SEWA (Aman)': 0.0},
+      );
+    }
+    final hasKtp = customer.nik.isNotEmpty;
+    final hasSim = customer.simNumber.isNotEmpty;
+    final docScore = (hasKtp && hasSim) ? 3.0 : (hasKtp || hasSim ? 2.0 : 1.0);
+    final isLocal = (customer.address ?? '').isNotEmpty;
+    return _mlService.screenCustomerEligibility(
+      docScore: docScore,
+      isLocalDomicile: isLocal,
+      jobStatusScore: 3.0,
+      hasEmergencyContact: customer.phoneNumber.isNotEmpty,
+    );
+  }
+
+  /// 4. Support Vector Machine (SVM): Evaluasi Kelayakan Armada & Keputusan Jalan/Bengkel
+  SvmPrediction getVehicleSafetyEvaluation(Vehicle vehicle) {
+    int kmSinceService = 2500;
+    final rules = _maintenanceRules.where((r) => r.vehicleId == vehicle.id).toList();
+    if (rules.isNotEmpty) {
+      final lastKm = rules.map((r) => r.lastServiceKm).reduce((a, b) => a > b ? a : b);
+      kmSinceService = (vehicle.odometerCurrent - lastKm).clamp(0, 50000);
+    } else {
+      kmSinceService = (vehicle.odometerCurrent % 10000);
+    }
+
+    final vehicleInspections = _inspections.where((i) => i.vehicleId == vehicle.id);
+    int defectCount = 0;
+    for (var insp in vehicleInspections) {
+      defectCount += insp.bodyDefects.length;
+    }
+
+    double complaintScore = vehicle.status == VehicleStatus.perawatan ? 8.0 : (defectCount > 3 ? 5.0 : 2.0);
+
+    return _mlService.evaluateFleetSafety(
+      kmSinceLastService: kmSinceService.toDouble(),
+      defectCount: defectCount.toDouble(),
+      complaintScore: complaintScore,
+    );
+  }
+
+  int getVehicleDefectCount(String vehicleId) {
+    final vehicleInspections = _inspections.where((i) => i.vehicleId == vehicleId);
+    int defectCount = 0;
+    for (var insp in vehicleInspections) {
+      defectCount += insp.bodyDefects.length;
+    }
+    return defectCount;
+  }
+
   // Selected Items for Master-Detail Views
   Vehicle? _selectedVehicle;
   Rental? _selectedRental;

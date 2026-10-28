@@ -173,9 +173,17 @@ class _DashboardViewState extends State<DashboardView> {
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         ),
-                        icon: const Icon(Icons.psychology_rounded, size: 16),
-                        label: const Text('AI & Analitik ML', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                        onPressed: () => state.setTabIndex(state.currentRole == UserRole.manager ? 5 : 4),
+                        icon: const Icon(Icons.sync_rounded, size: 16),
+                        label: const Text('Latih Ulang AI (4 Model)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                        onPressed: () {
+                          state.reTrainMlModels();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              backgroundColor: AppTheme.success,
+                              content: Text('Semua 4 Model ML (Linear & Logistic Regression, Naive Bayes, SVM) berhasil diperbarui!'),
+                            ),
+                          );
+                        },
                       ),
                       OutlinedButton.icon(
                         style: OutlinedButton.styleFrom(
@@ -449,6 +457,10 @@ class _DashboardViewState extends State<DashboardView> {
                 ),
               ],
             ],
+            const SizedBox(height: 18),
+
+            // AI Machine Learning Intelligence Pulse (4 Models Live Overview)
+            _buildAiIntelligencePulse(context, state, isMobile, currency),
             const SizedBox(height: 18),
 
             // Segmented Switcher for Clean UX
@@ -1276,6 +1288,244 @@ class _DashboardViewState extends State<DashboardView> {
         const SizedBox(width: 14),
         Expanded(flex: 3, child: mechanicTipsWidget),
       ],
+    );
+  }
+
+  // =========================================================================
+  // MACHINE LEARNING INTELLIGENCE PULSE: OVERVIEW OF 4 MODELS
+  // =========================================================================
+
+  Widget _buildAiIntelligencePulse(BuildContext context, AppState state, bool isMobile, NumberFormat currency) {
+    // 1. Linear Regression: Total Service Budget
+    double totalServiceBudget = 0.0;
+    for (var v in state.vehicles) {
+      totalServiceBudget += state.getPredictedMaintenanceCost(v);
+    }
+    final lin = state.mlService.linearRegression;
+
+    // 2. Logistic Regression: High Late Risk Rentals
+    int highLateRiskCount = 0;
+    final activeRentals = state.rentals.where((r) => r.rentalStatus == 'ACTIVE');
+    for (var r in activeRentals) {
+      if (state.getPredictedRentalLateProbability(r) > 0.5) highLateRiskCount++;
+    }
+    final log = state.mlService.logisticRegression;
+
+    // 3. Naive Bayes: Customer Screening Ratio
+    int eligibleCount = 0;
+    for (var c in state.customers) {
+      if (state.getCustomerEligibility(c).bestClass == 'LAYAK SEWA (Aman)') eligibleCount++;
+    }
+    final eligiblePercent = state.customers.isNotEmpty
+        ? ((eligibleCount / state.customers.length) * 100).toStringAsFixed(0)
+        : '100';
+
+    // 4. SVM: Fleet Prima vs Kritis
+    int primaCount = 0;
+    int kritisCount = 0;
+    for (var v in state.vehicles) {
+      final svm = state.getVehicleSafetyEvaluation(v);
+      if (svm.isPositive) {
+        primaCount++;
+      } else {
+        kritisCount++;
+      }
+    }
+    final svm = state.mlService.svmClassifier;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceCard,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppTheme.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF6366F1).withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(Icons.psychology_rounded, size: 16, color: Color(0xFF818CF8)),
+                  ),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'Pusat Intelijen Operasional (4 Model ML)',
+                    style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: AppTheme.textPrimary),
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: AppTheme.success.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: AppTheme.success.withValues(alpha: 0.3)),
+                ),
+                child: const Text(
+                  'Pure-Dart On-Device ML',
+                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.success),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+
+          // 4 Grid Pulse Cards
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final crossAxisCount = constraints.maxWidth < 650 ? 1 : (constraints.maxWidth < 1100 ? 2 : 4);
+              final aspectRatio = crossAxisCount == 1 ? 2.4 : (crossAxisCount == 2 ? 1.7 : 1.8);
+              return GridView.count(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                crossAxisCount: crossAxisCount,
+                mainAxisSpacing: 10,
+                crossAxisSpacing: 10,
+                childAspectRatio: aspectRatio,
+                children: [
+                  // Card 1: Linear Regression
+                  _aiPulseCard(
+                    title: '1. Linear Regression',
+                    subtitle: 'Estimasi Servis Armada',
+                    value: currency.format(totalServiceBudget),
+                    meta: 'Model Fit R²: ${(lin.r2Score * 100).toStringAsFixed(0)}%',
+                    color: const Color(0xFF3B82F6),
+                    icon: Icons.show_chart_rounded,
+                    actionHint: 'Buka Jadwal Servis →',
+                    onTap: () {
+                      final targetIndex = state.currentRole == UserRole.mechanic ? 0 : (state.currentRole == UserRole.frontDesk ? 3 : 3);
+                      state.setTabIndex(targetIndex);
+                    },
+                  ),
+
+                  // Card 2: Logistic Regression
+                  _aiPulseCard(
+                    title: '2. Logistic Regression',
+                    subtitle: 'Risiko Telat (Overtime)',
+                    value: highLateRiskCount > 0 ? '$highLateRiskCount Sewa Berisiko' : '0 Risiko Tinggi',
+                    meta: 'Akurasi Sigmoid: ${(log.accuracy * 100).toStringAsFixed(0)}%',
+                    color: highLateRiskCount > 0 ? AppTheme.danger : const Color(0xFFF59E0B),
+                    icon: Icons.alt_route_rounded,
+                    actionHint: 'Lihat Transaksi Sewa →',
+                    onTap: () {
+                      final targetIndex = state.currentRole == UserRole.frontDesk ? 2 : 2;
+                      state.setTabIndex(targetIndex);
+                    },
+                  ),
+
+                  // Card 3: Naive Bayes
+                  _aiPulseCard(
+                    title: '3. Naive Bayes',
+                    subtitle: 'Screening Pelanggan',
+                    value: '$eligiblePercent% Layak Sewa',
+                    meta: '$eligibleCount dari ${state.customers.length} penyewa aman',
+                    color: const Color(0xFF10B981),
+                    icon: Icons.hub_rounded,
+                    actionHint: 'Cek Screening Kasir →',
+                    onTap: () {
+                      final targetIndex = state.currentRole == UserRole.frontDesk ? 2 : 2;
+                      state.setTabIndex(targetIndex);
+                    },
+                  ),
+
+                  // Card 4: SVM
+                  _aiPulseCard(
+                    title: '4. Support Vector Machine',
+                    subtitle: 'Kelaikan Jalan Armada',
+                    value: '$primaCount Prima • $kritisCount Kritis',
+                    meta: '${svm.supportVectorCount} Titik Support Vectors',
+                    color: kritisCount > 0 ? AppTheme.warning : const Color(0xFF8B5CF6),
+                    icon: Icons.shield_outlined,
+                    actionHint: 'Buka Kondisi Armada →',
+                    onTap: () {
+                      state.setTabIndex(1);
+                    },
+                  ),
+                ],
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _aiPulseCard({
+    required String title,
+    required String subtitle,
+    required String value,
+    required String meta,
+    required Color color,
+    required IconData icon,
+    required String actionHint,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: AppTheme.surfaceInput,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: color.withValues(alpha: 0.25)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Row(
+                    children: [
+                      Icon(icon, size: 14, color: color),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          title,
+                          style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: color),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Text(actionHint, style: const TextStyle(fontSize: 10, color: AppTheme.textMuted, fontWeight: FontWeight.w600)),
+              ],
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  value,
+                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: AppTheme.textPrimary),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(subtitle, style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary)),
+              ],
+            ),
+            Text(meta, style: const TextStyle(fontSize: 10, color: AppTheme.textDim, fontFamily: 'monospace')),
+          ],
+        ),
+      ),
     );
   }
 }

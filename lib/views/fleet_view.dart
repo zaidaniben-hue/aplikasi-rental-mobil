@@ -21,7 +21,7 @@ class FleetView extends StatelessWidget {
     final countBooking = state.vehicles.where((v) => v.status == VehicleStatus.booking).length;
     final countPerawatan = state.vehicles.where((v) => v.status == VehicleStatus.perawatan).length;
 
-    final isMobile = MediaQuery.of(context).size.width < 900;
+    final isMobile = MediaQuery.of(context).size.width < 1050;
 
     final masterPane = Padding(
       padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 24, vertical: isMobile ? 16 : 20),
@@ -410,21 +410,55 @@ class FleetView extends StatelessWidget {
                                                 ),
                                               ],
                                             ),
-                                            Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                              decoration: BoxDecoration(
-                                                color: Color(v.status.colorValue).withValues(alpha: 0.15),
-                                                borderRadius: BorderRadius.circular(6),
-                                                border: Border.all(color: Color(v.status.colorValue).withValues(alpha: 0.4)),
-                                              ),
-                                              child: Text(
-                                                v.status.label,
-                                                style: TextStyle(
-                                                  fontSize: 10,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: Color(v.status.colorValue),
+                                            Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                // SVM Roadworthiness Badge
+                                                Builder(builder: (context) {
+                                                  final svm = state.getVehicleSafetyEvaluation(v);
+                                                  final color = svm.isPositive ? AppTheme.success : AppTheme.danger;
+                                                  return Container(
+                                                    margin: const EdgeInsets.only(right: 6),
+                                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                                                    decoration: BoxDecoration(
+                                                      color: color.withValues(alpha: 0.15),
+                                                      borderRadius: BorderRadius.circular(6),
+                                                      border: Border.all(color: color.withValues(alpha: 0.3)),
+                                                    ),
+                                                    child: Row(
+                                                      mainAxisSize: MainAxisSize.min,
+                                                      children: [
+                                                        Icon(Icons.shield_outlined, size: 10, color: color),
+                                                        const SizedBox(width: 3),
+                                                        Text(
+                                                          svm.isPositive ? 'SVM Prima' : 'SVM Kritis',
+                                                          style: TextStyle(
+                                                            fontSize: 9,
+                                                            fontWeight: FontWeight.bold,
+                                                            color: color,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  );
+                                                }),
+                                                Container(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                                  decoration: BoxDecoration(
+                                                    color: Color(v.status.colorValue).withValues(alpha: 0.15),
+                                                    borderRadius: BorderRadius.circular(6),
+                                                    border: Border.all(color: Color(v.status.colorValue).withValues(alpha: 0.4)),
+                                                  ),
+                                                  child: Text(
+                                                    v.status.label,
+                                                    style: TextStyle(
+                                                      fontSize: 10,
+                                                      fontWeight: FontWeight.bold,
+                                                      color: Color(v.status.colorValue),
+                                                    ),
+                                                  ),
                                                 ),
-                                              ),
+                                              ],
                                             ),
                                           ],
                                         ),
@@ -506,10 +540,14 @@ class FleetView extends StatelessWidget {
                                                   fontSize: 13,
                                                   color: AppTheme.textPrimary,
                                                 ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
                                               ),
                                               Text(
-                                                '${v.category} • Tahun ${v.yearMade}',
+                                                '${v.category} • Thn ${v.yearMade}',
                                                 style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
                                               ),
                                             ],
                                           ),
@@ -522,12 +560,16 @@ class FleetView extends StatelessWidget {
                                             crossAxisAlignment: CrossAxisAlignment.start,
                                             children: [
                                               Text(
-                                                v.transmission == 'OTOMATIS' ? 'Automatic (AT)' : 'Manual (MT)',
+                                                v.transmission == 'OTOMATIS' ? 'AT' : 'MT',
                                                 style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
                                               ),
                                               Text(
                                                 '${NumberFormat('#,###').format(v.odometerCurrent)} km',
                                                 style: const TextStyle(fontSize: 11, color: AppTheme.textDim, fontFamily: 'monospace'),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
                                               ),
                                             ],
                                           ),
@@ -539,8 +581,36 @@ class FleetView extends StatelessWidget {
                                           child: Text(
                                             '${currency.format(v.dailyRate)}/hr',
                                             style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppTheme.textPrimary),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
                                           ),
                                         ),
+
+                                        // SVM Roadworthiness Pill
+                                        Builder(builder: (context) {
+                                          final svm = state.getVehicleSafetyEvaluation(v);
+                                          final color = svm.isPositive ? AppTheme.success : AppTheme.danger;
+                                          return Container(
+                                            margin: const EdgeInsets.only(right: 8),
+                                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
+                                            decoration: BoxDecoration(
+                                              color: color.withValues(alpha: 0.12),
+                                              borderRadius: BorderRadius.circular(6),
+                                              border: Border.all(color: color.withValues(alpha: 0.3)),
+                                            ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Icon(Icons.shield_outlined, size: 12, color: color),
+                                                const SizedBox(width: 4),
+                                                Text(
+                                                  svm.isPositive ? 'SVM Prima' : 'SVM Kritis',
+                                                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: color),
+                                                ),
+                                              ],
+                                            ),
+                                          );
+                                        }),
 
                                         // Status Badge
                                         Container(
@@ -761,6 +831,10 @@ class FleetView extends StatelessWidget {
             ),
           );
         }),
+        const SizedBox(height: 14),
+
+        // AI Intelligence: SVM Hyperplane & Linear Regression Estimator
+        _buildAiSvmAndCostSection(context, state, selected, currency),
         const SizedBox(height: 18),
 
         // Vehicle Specs Grid
@@ -1025,6 +1099,7 @@ class FleetView extends StatelessWidget {
                       Expanded(
                         child: DropdownButtonFormField<String>(
                           initialValue: transmission,
+                          isExpanded: true,
                           dropdownColor: AppTheme.surfaceCard,
                           decoration: const InputDecoration(labelText: 'Transmisi'),
                           items: const [
@@ -1038,6 +1113,7 @@ class FleetView extends StatelessWidget {
                       Expanded(
                         child: DropdownButtonFormField<String>(
                           initialValue: category,
+                          isExpanded: true,
                           dropdownColor: AppTheme.surfaceCard,
                           decoration: const InputDecoration(labelText: 'Kategori'),
                           items: const [
@@ -1082,6 +1158,158 @@ class FleetView extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  // =========================================================================
+  // MACHINE LEARNING: SVM SAFETY CLASSIFIER & LINEAR REGRESSION SERVICE COST
+  // =========================================================================
+
+  static Widget _buildAiSvmAndCostSection(
+    BuildContext context,
+    AppState state,
+    Vehicle selected,
+    NumberFormat currency,
+  ) {
+    final svm = state.getVehicleSafetyEvaluation(selected);
+    final defectCount = state.getVehicleDefectCount(selected.id);
+    final predictedCost = state.getPredictedMaintenanceCost(selected);
+    final isPrima = svm.isPositive;
+    final svmColor = isPrima ? AppTheme.success : AppTheme.danger;
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceInput,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: svmColor.withValues(alpha: 0.35)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header: SVM
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: svmColor.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Icon(Icons.shield_outlined, size: 16, color: svmColor),
+              ),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'AI Fleet Health (Support Vector Machine)',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppTheme.textPrimary),
+                    ),
+                    Text(
+                      'Klasifikasi kelayakan jalan berbasis Hyperplane Soft-Margin',
+                      style: TextStyle(fontSize: 10, color: AppTheme.textMuted),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: svmColor.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: svmColor.withValues(alpha: 0.4)),
+                ),
+                child: Text(
+                  isPrima ? 'PRIMA' : 'KRITIS',
+                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 11, color: svmColor),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+
+          // Features grid
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: AppTheme.surfaceCard,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: AppTheme.border),
+            ),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('Margin Hyperplane (d):', style: TextStyle(fontSize: 11, color: AppTheme.textSecondary)),
+                    Text(
+                      '${svm.geometricDistance >= 0 ? '+' : ''}${svm.geometricDistance.toStringAsFixed(2)}',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: svmColor, fontFamily: 'monospace'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('Titik Cacat Fisik Bodi:', style: TextStyle(fontSize: 11, color: AppTheme.textSecondary)),
+                    Text(
+                      '$defectCount Titik Kerusakan',
+                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: defectCount > 2 ? AppTheme.warning : AppTheme.textPrimary),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('Keputusan Operasional SVM:', style: TextStyle(fontSize: 11, color: AppTheme.textSecondary)),
+                    Text(
+                      svm.predictedLabel,
+                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: svmColor),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
+
+          // Linear Regression Maintenance Cost Predictor
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1E3A8A).withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: const Color(0xFF3B82F6).withValues(alpha: 0.3)),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.show_chart_rounded, size: 14, color: Color(0xFF60A5FA)),
+                    const SizedBox(width: 6),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: const [
+                        Text('Estimasi Servis Rutin (Linear Regression):', style: TextStyle(fontSize: 10, color: Color(0xFF93C5FD), fontWeight: FontWeight.w600)),
+                        Text('Berdasarkan Odo & Usia Kendaraan', style: TextStyle(fontSize: 9, color: AppTheme.textMuted)),
+                      ],
+                    ),
+                  ],
+                ),
+                Text(
+                  currency.format(predictedCost),
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Color(0xFF93C5FD)),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

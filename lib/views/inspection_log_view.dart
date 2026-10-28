@@ -139,7 +139,30 @@ class _InspectionLogViewState extends State<InspectionLogView> {
                 ),
               ],
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 12),
+
+            // SVM Roadworthiness Intelligence Banner
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1E293B).withValues(alpha: 0.7),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFF8B5CF6).withValues(alpha: 0.35)),
+              ),
+              child: Row(
+                children: const [
+                  Icon(Icons.shield_outlined, size: 16, color: Color(0xFFA78BFA)),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'AI Safety Hyperplane (Support Vector Machine): Mengklasifikasi kelaikan unit secara otomatis berdasarkan akumulasi titik cacat & kilometer.',
+                      style: TextStyle(fontSize: 11, color: Color(0xFFC4B5FD)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
 
             // Search & Filter
             Container(
@@ -225,10 +248,16 @@ class _InspectionLogViewState extends State<InspectionLogView> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              Wrap(
+                                alignment: WrapAlignment.spaceBetween,
+                                crossAxisAlignment: WrapCrossAlignment.center,
+                                spacing: 8,
+                                runSpacing: 6,
                                 children: [
-                                  Row(
+                                  Wrap(
+                                    crossAxisAlignment: WrapCrossAlignment.center,
+                                    spacing: 8,
+                                    runSpacing: 4,
                                     children: [
                                       Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -250,7 +279,6 @@ class _InspectionLogViewState extends State<InspectionLogView> {
                                           ),
                                         ),
                                       ),
-                                      const SizedBox(width: 8),
                                       Text(
                                         vehicle?.plateNumber ?? 'PLAT TIDAK DIKETAHUI',
                                         style: const TextStyle(
@@ -260,6 +288,24 @@ class _InspectionLogViewState extends State<InspectionLogView> {
                                           color: AppTheme.textPrimary,
                                         ),
                                       ),
+                                      if (vehicle != null) ...[
+                                        Builder(builder: (context) {
+                                          final svm = state.getVehicleSafetyEvaluation(vehicle);
+                                          final color = svm.isPositive ? AppTheme.success : AppTheme.danger;
+                                          return Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                            decoration: BoxDecoration(
+                                              color: color.withValues(alpha: 0.15),
+                                              borderRadius: BorderRadius.circular(4),
+                                              border: Border.all(color: color.withValues(alpha: 0.3)),
+                                            ),
+                                            child: Text(
+                                              'SVM: ${svm.isPositive ? "PRIMA" : "KRITIS"}',
+                                              style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: color),
+                                            ),
+                                          );
+                                        }),
+                                      ],
                                     ],
                                   ),
                                   Text(

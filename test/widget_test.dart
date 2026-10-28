@@ -20,6 +20,23 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('RentDesk'), findsWidgets);
-    expect(find.text('Pusat Operasional Rental Armada'), findsOneWidget);
+    expect(find.text('Sistem Manajemen Armada & POS Kasir'), findsOneWidget);
+  });
+
+  testWidgets('RentDeskApp boots successfully on mobile screen without overflows', (WidgetTester tester) async {
+    // Configure standard mobile viewport (360 x 800)
+    tester.view.physicalSize = const Size(360, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() => tester.view.resetPhysicalSize());
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider(
+        create: (_) => AppState()..loadInitialData(),
+        child: const RentDeskApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('RentDesk'), findsWidgets);
   });
 }

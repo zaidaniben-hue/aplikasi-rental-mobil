@@ -334,6 +334,8 @@ class Rental {
     this.customer,
   });
 
+  bool get isOverdue => overtimeHours > 0 || overtimeFee > 0 || (rentalStatus == 'ACTIVE' && DateTime.now().isAfter(plannedEndTime));
+
   factory Rental.fromJson(Map<String, dynamic> json) {
     return Rental(
       id: json['id']?.toString() ?? '',

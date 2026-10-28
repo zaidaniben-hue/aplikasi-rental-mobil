@@ -183,23 +183,25 @@ class _LoginViewState extends State<LoginView> {
                     child: const Icon(Icons.directions_car_filled, color: Colors.white, size: 24),
                   ),
                   const SizedBox(width: 14),
-                  const Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'RentDesk',
-                        style: TextStyle(
-                          color: AppTheme.textPrimary,
-                          fontSize: 22,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 0.5,
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'RentDesk',
+                          style: TextStyle(
+                            color: AppTheme.textPrimary,
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.5,
+                          ),
                         ),
-                      ),
-                      Text(
-                        'Sistem Manajemen Armada & POS Kasir',
-                        style: TextStyle(color: AppTheme.textMuted, fontSize: 11),
-                      ),
-                    ],
+                        Text(
+                          'Sistem Manajemen Armada & POS Kasir',
+                          style: TextStyle(color: AppTheme.textMuted, fontSize: 11),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -314,6 +316,7 @@ class _LoginViewState extends State<LoginView> {
   Widget _buildMobileBrandHeader() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
       children: [
         Container(
           width: 38,
@@ -325,12 +328,15 @@ class _LoginViewState extends State<LoginView> {
           child: const Icon(Icons.directions_car_filled, color: Colors.white, size: 20),
         ),
         const SizedBox(width: 12),
-        const Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('RentDesk', style: TextStyle(color: AppTheme.textPrimary, fontSize: 18, fontWeight: FontWeight.bold)),
-            Text('Manajemen Rental Armada', style: TextStyle(color: AppTheme.textMuted, fontSize: 11)),
-          ],
+        const Flexible(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('RentDesk', style: TextStyle(color: AppTheme.textPrimary, fontSize: 18, fontWeight: FontWeight.bold)),
+              Text('Manajemen Rental Armada', style: TextStyle(color: AppTheme.textMuted, fontSize: 11)),
+            ],
+          ),
         ),
       ],
     );
@@ -456,10 +462,14 @@ class _LoginViewState extends State<LoginView> {
           const SizedBox(height: 12),
 
           // Remember Me Checkbox
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
+            runSpacing: 4,
             children: [
               Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   SizedBox(
                     width: 24,
@@ -475,7 +485,7 @@ class _LoginViewState extends State<LoginView> {
                   const Text('Ingat sesi login', style: TextStyle(fontSize: 12, color: AppTheme.textSecondary)),
                 ],
               ),
-              Text(
+              const Text(
                 'Lupa sandi?',
                 style: TextStyle(fontSize: 12, color: AppTheme.primary, fontWeight: FontWeight.w600),
               ),
@@ -527,9 +537,12 @@ class _LoginViewState extends State<LoginView> {
                   children: [
                     Icon(Icons.touch_app_rounded, size: 14, color: AppTheme.primary),
                     SizedBox(width: 6),
-                    Text(
-                      'Pintasan Uji Coba Cepat (Demo):',
-                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.textSecondary),
+                    Expanded(
+                      child: Text(
+                        'Pintasan Uji Coba Cepat (Demo):',
+                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.textSecondary),
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ],
                 ),

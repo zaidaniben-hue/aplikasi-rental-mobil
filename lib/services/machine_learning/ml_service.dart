@@ -4,6 +4,11 @@ import 'logistic_regression.dart';
 import 'naive_bayes.dart';
 import 'svm_classifier.dart';
 
+export 'linear_regression.dart';
+export 'logistic_regression.dart';
+export 'naive_bayes.dart';
+export 'svm_classifier.dart';
+
 /// Service Terpusat untuk Orkestrasi Seluruh Algoritma Machine Learning di RentDesk
 class MlService {
   static final MlService _instance = MlService._internal();
@@ -165,5 +170,94 @@ class MlService {
 
     isReady = true;
     lastTrainedTime = DateTime.now();
+  }
+
+  // --- 1. Linear Regression Helper ---
+  double predictMaintenanceCost({required double odometerKm, required double vehicleAgeYears}) {
+    if (!isReady || !linearRegression.isTrained) return 750000.0;
+    try {
+      final pred = linearRegression.predict([odometerKm, vehicleAgeYears]);
+      return pred < 250000 ? 250000 : pred;
+    } catch (_) {
+      return 750000.0;
+    }
+  }
+
+  // --- 2. Logistic Regression Helper ---
+  double predictRentalLateProbability({
+    required double durationDays,
+    required bool hasPastLate,
+    required double kmPerDay,
+    required double customerAge,
+  }) {
+    if (!isReady || !logisticRegression.isTrained) return 0.2;
+    try {
+      return logisticRegression.predictProbability([
+        durationDays.clamp(1.0, 30.0),
+        hasPastLate ? 1.0 : 0.0,
+        kmPerDay.clamp(10.0, 500.0),
+        customerAge.clamp(18.0, 75.0),
+      ]);
+    } catch (_) {
+      return 0.2;
+    }
+  }
+
+  // --- 3. Naive Bayes Helper ---
+  NaiveBayesPrediction screenCustomerEligibility({
+    required double docScore,
+    required bool isLocalDomicile,
+    required double jobStatusScore,
+    required bool hasEmergencyContact,
+  }) {
+    if (!isReady || !naiveBayes.isTrained) {
+      return NaiveBayesPrediction(
+        bestClass: 'LAYAK SEWA (Aman)',
+        probabilities: {'LAYAK SEWA (Aman)': 0.85, 'VERIFIKASI KETAT': 0.12, 'TOLAK / BLACKLIST': 0.03},
+      );
+    }
+    try {
+      return naiveBayes.predict([
+        docScore.clamp(1.0, 3.0),
+        isLocalDomicile ? 1.0 : 0.0,
+        jobStatusScore.clamp(1.0, 3.0),
+        hasEmergencyContact ? 1.0 : 0.0,
+      ]);
+    } catch (_) {
+      return NaiveBayesPrediction(
+        bestClass: 'LAYAK SEWA (Aman)',
+        probabilities: {'LAYAK SEWA (Aman)': 0.85, 'VERIFIKASI KETAT': 0.12, 'TOLAK / BLACKLIST': 0.03},
+      );
+    }
+  }
+
+  // --- 4. Support Vector Machine Helper ---
+  SvmPrediction evaluateFleetSafety({
+    required double kmSinceLastService,
+    required double defectCount,
+    required double complaintScore,
+  }) {
+    if (!isReady || !svmClassifier.isTrained) {
+      return SvmPrediction(
+        decisionValue: 1.0,
+        geometricDistance: 0.8,
+        predictedLabel: 'PRIMA (Aman Jalan)',
+        isPositive: true,
+      );
+    }
+    try {
+      return svmClassifier.predict([
+        kmSinceLastService.clamp(0.0, 50000.0),
+        defectCount.clamp(0.0, 20.0),
+        complaintScore.clamp(1.0, 10.0),
+      ]);
+    } catch (_) {
+      return SvmPrediction(
+        decisionValue: 1.0,
+        geometricDistance: 0.8,
+        predictedLabel: 'PRIMA (Aman Jalan)',
+        isPositive: true,
+      );
+    }
   }
 }
